@@ -26,9 +26,9 @@
 
    \ifxetex
 		\usepackage[no-math]{fontspec}
-	 	\setmainfont{TeX Gyre Termes}
-	   	\setsansfont{TeX Gyre Heros}
-    	\setmonofont{TeX Gyre Cursor}
+	 	\setmainfont{texgyretermes-regular.otf}
+	   	\setsansfont{texgyreheros-regular.otf}
+    	\setmonofont{texgyrecursor-regular.otf}
 	\else
 		\ClassWarning{cslthse-msc}{Use XeTeX for better fonts!}		
 		\usepackage[T1]{fontenc}
