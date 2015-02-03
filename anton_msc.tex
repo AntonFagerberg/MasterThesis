@@ -60,6 +60,7 @@ Leave a \textit{2cm} vertical space after the abstract and provide a few keyword
 Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP 1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP 2.0), is expected to be released in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP 1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP 1.1 as the protocol used on all web servers and even longer for many legacy systems and clients. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1 even many years after the HTTP/2 release.
 
 \section{Headers}
+\label{headers}
 
 It is common in modern web applications to send a lot of HTTP requests toward a back-end API. These requests can be very small, such as an PUT request to update a single field but the actual payload can also be considered small when retrieving data from the server when it is compared to the total amount of data transmitted. Along with every HTTP request are typically plenty of headers. These headers can be a substantial part of every request and may therefore end up being the performance bottle neck if many small requests has to be transmitted.
 
@@ -177,14 +178,15 @@ From the results, we can see that the size of the sent headers has increased fro
   \caption{Header and payload ratio when doing 10 separate or one concatenated request to fetch users.}
 \end{figure}
 
-The data displayed in this example should be viewed as a lower bound. In practise, HTTP cookies which are used for personalisation, analytics and session management are also sent with every HTTP request as headers and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[p. 200]{HPBN}.
+The data displayed in this example should be viewed as a lower bound. In practise, HTTP cookies which are used for personalisation, analytics and session management are also sent with every HTTP request as headers and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
 
-This is one of the issues that may (ändra "may" om det stämmer när http2 släpps) be mitigated by using HTTP/2 which remembers which headers that has already been sent and therefore doesn't need to retransmit them on subsequent requests\cite[p. 222]{HPBN}.
+This is one of the issues that may (ändra "may" om det stämmer när http2 släpps) be mitigated by using HTTP/2 which remembers which headers that has already been sent and therefore doesn't need to retransmit them on subsequent requests\cite[page 222]{HPBN}.
 
 \section{Maximum TCP connections}
+\label{max_tcp}
 The HTTP 1.X protocol doesn't allow data to be multiplexed over the same connection\cite[p.194]{HPBN}. For this reason, browser vendors has introduced a connection pool of ~6 TCP connections per host (the HTTP 1.1 specification limits the pool to 2 connections\cite{rfc2616} per host, but modern browsers has refused to conform to this standard in order to decrease the load times).
 
-A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to avoid this limit. If the subdomains \{shard1, shard2, \ldots\}.example.com where created and pointed to the same server, more than six TCP connections can be used in parallel at the same time from that machine. This approach is not without downsides as every new host requires a new DNS lookup, a TCP three-Way handshake and a slow start from TCP which can have negative impact on the load times\cite[p. 199]{HPBN} - just the DNS lookup typically takes 20-120 ms\cite[p. 63]{HPWS}. Another problem with domain sharding is that the browser always opens six connections per shard even if not all of them are used. In addition, domain sharding can be a complicated manual process and it is hard to calculate how many shards to use for optimal performance. When Yahoo investigated this problem they reached to conclusion that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
+A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to avoid this limit. If the subdomains \{shard1, shard2, \ldots\}.example.com where created and pointed to the same server, more than six TCP connections can be used in parallel at the same time from that machine. This approach is not without downsides as every new host requires a new DNS lookup, a TCP three-Way handshake and a slow start from TCP which can have negative impact on the load times\cite[page 199]{HPBN} - just the DNS lookup typically takes 20-120 ms\cite[page 63]{HPWS}. Another problem with domain sharding is that the browser always opens six connections per shard even if not all of them are used. In addition, domain sharding can be a complicated manual process and it is hard to calculate how many shards to use for optimal performance. When Yahoo investigated this problem they reached to conclusion that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
 
 As an example, we can benchmark downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails, encoded in base-64 format, and the connection we are using has a lot of bandwidth but suffers from high latency.
 
@@ -219,7 +221,7 @@ When fetching thumbnails, you often want to display them as soon as each individ
 
 \section{Compression}
 
-All requested data should be compressed before it is sent to the client. A common compression algorithm used in HTTP requests is Gzip (GNU Zip) which works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[p. 237]{HPBN}.
+All requested data should be compressed before it is sent to the client. A common compression algorithm used in HTTP requests is Gzip (GNU Zip) which works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[page 237]{HPBN}.
 
 It is worth mentioning that there are scenarios where Gzip compression applied to very small files can increase the total size because of the Gzip dictionary overhead. This problem can be mitigated by defining a minimum file size threshold\cite{google_gzip}.
 
@@ -229,7 +231,7 @@ As an example, arbitrary user data for 50 users was created and stored in JSON f
 \mbox{Space Saving} = 1 - \frac{\mbox{Compressed Size}}{\mbox{Uncompressed Size}} = 1 - \frac{16,563}{55,205} = 70\%
 \end{equation}
 
-An important thing to note about Gzip compression is that only the payload is compressed in HTTP 1.1\cite{header_compression}. This means that the headers including cookies are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in HTTP/2\cite[p. 222]{HPBN}.
+An important thing to note about Gzip compression is that only the payload is compressed in HTTP 1.1\cite{header_compression}. This means that the headers including cookies are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in HTTP/2\cite[page 222]{HPBN}.
 
 \chapter{API Gateway Theory}
 When developing clients for a back-end API, you often find that the clients need and the APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ. Not being able to optimise the API for each clients need can hurt the clients performance which has to do a lot of extra work but can also strain the developer whom may have to do extra work to fit the API for every client. One approach to solve this problem is by utilising an API gateway.
@@ -237,6 +239,75 @@ When developing clients for a back-end API, you often find that the clients need
 \section{What is an API Gateway?}
 An API gateway works as an additional layer between the client and the server. For an API gateway to be efficient, it has to be able to augment the communication between the client and the server, and by doing so, improve the client performance and developer implementation of it.
 
-\makebibliography{anton_msc.bib}
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway.png}
+    \end{center}
+  \caption{A simple scenario using an API gateway between a client and a back-end API.}
+\end{figure}
+
+\section{Multiple resources \& requests}
+A client often has to perform many requests simultaneously, either to one or multiple back-end APIs. Typical scenarios are when a user loads a web application for the first time and the applications initial state and data has to be retrieved or when multiple connected resources has to be loaded.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_concatenation.png}
+    \end{center}
+  \caption{An API gateway receives a concatenated request which it distributes to multiple resources, the responses are then concatenated into a single response. The resources can either be one or several back-end APIs.}
+\end{figure}
+
+When working with HTTP requests, there are multiple penalties for executing many small requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and overhead from http headers (page \pageref{headers}).
+
+\section{Duplicate \& Unnecessary items}
+When requesting data from a back-end API, the response may contain unnecessary data which the client doesn't want. In a similar fashion, if a client performs several similar requests, it is possible the all the responses contains some duplicate data. By using an API gateway, the results from the back-end API(s) can be augmented to better fit the individual clients needs.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_duplicate.png}
+    \end{center}
+  \caption{Client requests item A, B, C, D. The API gateway fetches A, D from Resource 1. Item A from the Resource 2 response can be discarded since it's duplicate data. Item E, F from Resource 3 can be discarded since they are unnecessary. The API gateway can after retrieval respond with just A, B, C, D. The resources can either be one or several back-end APIs.}
+\end{figure}
+
+\section{Format transformation}
+It is common when working with older legacy systems that the data is formatted in a way which is not suitable for modern clients. In the case of JavaScript, the browsers have excellent built in support for JSON but not for XML. An API gateway can on the fly convert the data from the back-end to a format more appropriate for the client and respond with it.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_transform.png}
+    \end{center}
+  \caption{The client requests "user" in JSON-format. The API gateway fetches "user" in XML-format from the back-end, converts it to JSON and responds to the client in the appropriate format.}
+\end{figure}
+
+This has the benefit that the conversion code doesn't has to be rewritten for different types of clients. By performing the transformation in the gateway, the processing load is moved away from the client which can improve its performance.
+
+\section{Pure REST}
+If an API follows the strict rules of REST, it uses the concept of Hypermedia as the Engine of Application State (HATEOAS). Instead of defining a bunch of end-points which the client can utilise, it requires the client to discover the resources itself by first performing a GET request to the root. To root will respond with the resources available, such as users. The client then has to query the users root to discover which requests can be made in regards to users - and so on. Working in this pure way places a very high bar for the client developer\cite[page 61]{AASG}.
+
+API gateways can be used to transform a Pure REST API with HATEOAS to a simpler API which only follows some of the restrictions put in place by REST. This can significantly lower the amount of traffic between the client and the back-end which can be a big performance gain in cases such when the latency is high between the client and back-end (assuming that the latency between the API gateway and back-end is low such as when they are placed in the same LAN).
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_hateoas.png}
+    \end{center}
+  \caption{Scenario where the API gateway performs the pure REST HATEOAS-communication and at the same time exposes a simple end-point for the client.}
+\end{figure}
+
+\section{Authentication}
+
+\section{Caching}
+
+\section{Support older API versions}
+
+\section{Compression}
+
+\section{SSL}
+
+\section{Metrics \& analytics}
+\makebibliography{anton_msc}
 
 \end{document}
