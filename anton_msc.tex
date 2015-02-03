@@ -220,6 +220,7 @@ It is worth pointing out that increasing the bandwidth would not resolve this pr
 When fetching thumbnails, you often want to display them as soon as each individual image has been loaded and not wait for the entire concatenated response. When using a concatenated request to fetch multiple resources at the same time, the server can use chunked transfer encoding in the HTTP response to send the thumbnail data in chunks\cite{chunked}. By doing so, images can be loaded as soon as they are available in the client, even if loaded out of order\cite{dropbox_chunked}.
 
 \section{Compression}
+\label{compression}
 
 All requested data should be compressed before it is sent to the client. A common compression algorithm used in HTTP requests is Gzip (GNU Zip) which works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[page 237]{HPBN}.
 
@@ -297,17 +298,43 @@ API gateways can be used to transform a Pure REST API with HATEOAS to a simpler 
   \caption{Scenario where the API gateway performs the pure REST HATEOAS-communication and at the same time exposes a simple end-point for the client.}
 \end{figure}
 
+\section{Compression}
+API gateways can be used to compress responses in the cases where no compression is present on the back-end API. This can significantly reduce the amount of traffic the client has to receive which increases the performance - especially on mobile devices. HTTP compression was explored on page \pageref{compression} where it was noted that Gzip has an expected compression level of 60-80\% on text-based files.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_compression.png}
+    \end{center}
+  \caption{The API gateway compresses the response from the back-end API with Gzip which reduces the response traffic in the client by 70\%. Numbers taken from the example on page \pageref{compression}.}
+\end{figure}
+
 \section{Authentication}
 
 \section{Caching}
+Responses from frequent API calls can be cached in the API gateway to reduce the load on the back-end system\cite[page 107]{AASG}. The cache can have a specified lifetime or be invalidated based on certain events such as a table update on a database.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_cache.png}
+    \end{center}
+  \caption{Frequent API calls to the same end-point can be cached to reduce the load on the back-end.}
+\end{figure} 
+
 
 \section{Support older API versions}
-
-\section{Compression}
 
 \section{SSL}
 
 \section{Metrics \& analytics}
-\makebibliography{anton_msc}
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{plain}
+\bibliography{anton_msc}
+
+%\makebibliography{anton_msc}
 
 \end{document}
