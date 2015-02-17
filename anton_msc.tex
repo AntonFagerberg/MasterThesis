@@ -13,6 +13,34 @@
 \usepackage{float}
 \usepackage{listings}
 
+\lstset{ %
+%  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+%  commentstyle=\color{mygreen},    % comment style
+%  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=single,                    % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+%  keywordstyle=\color{blue},       % keyword style
+%  language=Octave,                 % the language of the code
+%  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=10pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+%  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,                       % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
 %\geometry{showframe}
 
 \author{
@@ -234,7 +262,7 @@ As an example, arbitrary user data for 50 users was created and stored in JSON f
 
 An important thing to note about Gzip compression is that only the payload is compressed in HTTP 1.1\cite{header_compression}. This means that the headers including cookies are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in HTTP/2\cite[page 222]{HPBN}.
 
-\chapter{API Gateway Theory}
+\chapter{API Gateways in theory}
 When developing clients for a back-end API, you often find that the clients need and the APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ. Not being able to optimise the API for each clients need can hurt the clients performance which has to do a lot of extra work but can also strain the developer whom may have to do extra work to fit the API for every client. One approach to solve this problem is by utilising an API gateway.
 
 \section{What is an API Gateway?}
@@ -309,8 +337,6 @@ API gateways can be used to compress responses in the cases where no compression
   \caption{The API gateway compresses the response from the back-end API with Gzip which reduces the response traffic in the client by 70\%. Numbers taken from the example on page \pageref{compression}.}
 \end{figure}
 
-\section{Authentication}
-
 \section{Caching}
 Responses from frequent API calls can be cached in the API gateway to reduce the load on the back-end system\cite[page 107]{AASG}. The cache can have a specified lifetime or be invalidated based on certain events such as a table update on a database.
 
@@ -320,14 +346,60 @@ Responses from frequent API calls can be cached in the API gateway to reduce the
       \includegraphics[width=0.9\textwidth]{images/api_gateway_cache.png}
     \end{center}
   \caption{Frequent API calls to the same end-point can be cached to reduce the load on the back-end.}
-\end{figure} 
+\end{figure}
 
+\section{Decreasing bandwidth \& cost}
+Cloud providers, such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_microsoft}, does not charge for bandwidth as long as data is transfered between servers in the same regions. When using an API-gateway in the cloud, bandwidth \& its costs can be reduced by placing the API-gateway in the same cloud region and apply bandwidth saving techniques such as the previously in this chapter mentioned: compression, duplicate \& unnecessary items, pure REST and in some cases even format transformation.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_bandwidth.png}
+    \end{center}
+  \caption{How cloud providers such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_microsoft} charges based if the traffic is over WAN or in the same cloud region.}
+\end{figure}
+
+\section{Latency}
+
+\section{Authentication}
 
 \section{Support older API versions}
 
 \section{SSL}
 
 \section{Metrics \& analytics}
+
+\chapter{Crocodile Pear - API-gateway prototype}
+
+\section{Elixir}
+
+\subsection{The pipe operator}
+One of the integral parts of Elixir is the pipe operator: $|>$. The pipe operator takes the output from the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity to the Unix pipe operator: $|$.
+
+As an example, the following code:
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+Enum.sum(Enum.filter(Enum.map(1..100_000, &(&1 * 3)), odd?))
+\end{lstlisting}
+  \caption{Elixir code written without the pipe operator.}
+\end{figure}
+
+Can be rewritten using the pipe operator as:
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
+\end{lstlisting}
+  \caption{Elixir code written with the pipe operator.}
+\end{figure}
+
+The pipe operator is also an integral part in how Crocodile Pear works as it is used when piping requests to a result along with transformations which will be explained further down.
+
+\subsection{Actors, Erlang \& OTP}
+
 
 \cleardoublepage
 \phantomsection
