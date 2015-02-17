@@ -371,7 +371,11 @@ Cloud providers, such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_micr
 
 \chapter{Crocodile Pear - API-gateway prototype}
 
-\section{Elixir}
+\section{Language \& Libraries}
+\subsection{Elixir}
+Elixir is a functional language designed for building scalable and maintainable applications on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. Properties all of which are important for a successful API-gateway.
+
+Two other important influences for choosing Elixir in this prototype are the pipe operator and asynchronicity by utilising Elixir processes, which will be explained in detail below.
 
 \subsection{The pipe operator}
 One of the integral parts of Elixir is the pipe operator: $|>$. The pipe operator takes the output from the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity to the Unix pipe operator: $|$.
@@ -393,13 +397,107 @@ Can be rewritten using the pipe operator as:
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{Elixir code written with the pipe operator.}
+  \caption{The same Elixir code written with the pipe operator.}
 \end{figure}
 
 The pipe operator is also an integral part in how Crocodile Pear works as it is used when piping requests to a result along with transformations which will be explained further down.
 
-\subsection{Actors, Erlang \& OTP}
+\subsection{Elixir processes}
+Processes are Elixir term for the Actors model. Processes in Elixir are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. They run concurrently, isolated from each other and can communicate by message passing\cite{elixir_processes}.
 
+\subsection{Plug}
+Plug is a specification for composable modules in between web applications, and connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing an end-point for the clients and receive their HTTP requests.
+
+\subsection{Poison \& HTTPoison}
+Internally, Crocodile Pear uses two libraries. Poison\cite{poison} is a library used for encoding and decoding JSON from and to Elixir data structures. HTTPoison\cite{httpoison}, based on hackney\cite{hackney}, is used to execute HTTP requests. Both these libraries are only used internally and are abstracted away to ensure that they can be removed or replaced in the future. 
+
+\section{High-level concept}
+
+\subsection{Data}
+The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data of the HTTP request/response.
+
+\subsection{Producer \& Consumer}
+The key component in Crocodile Pear is the relationship between producers and consumers. Both consumers and producers as fully asynchronous Elixir processes which communicate by passing messages. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+send(producer, { :ready, self })	
+\end{lstlisting}
+  \caption{The consumed sends a tuple with status ready and the identity of itself to the producer when the consumer is ready to receive data.}
+\end{figure}
+
+The identity of the producer is always known to the consumer via an Elixir PID (process identification). The producer will only produce a response once and will terminate after a consumer has consumed the response.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/crocpear_producer_consumer.png}
+    \end{center}
+  \caption{Message passing between a producer and a consumed. Time goes from left to right.}
+\end{figure}
+
+After the producer has been notified that a consumer is ready to consume its data, it must first respond with the status and the headers. After that, the chunks must be sent in order and finally a done message should be send indicating that the producer will terminate no more chunks are available.
+
+\subsection{Request}
+The $request$ function in Crocodile Pear takes one or a list of URIs and will always return a list of producers. These producers will produce the result of an HTTP request the specified URIs.
+
+\subsection{Response}
+The $response$ function takes a list of producers and turns this in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed as the parameter, the first responding producer will be consumed first which means that the order is not deterministic. However, the first responding producer will be consumed until completed before any other producer is consumed which guarantees that the chunks will not be mixed together.
+
+As soon as a chunk from a producer has been consumed by the response function, it will respond to the API-gateway client with the consumed chunked via HTTP chunked response.
+
+\subsection{Transformers}
+Without transformers, the API-gateway is not much more than a simple proxy. To manipulate the data when it flows between a request and a response, the concept of transformers are introduced.
+
+A $transformer$ function takes a lambda function as its parameter. This lambda function pattern matches on the three types of messages: the status, the header-map and the chunks and applies a function on these parts to manipulate them in some way.
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+blanker = fn(response) ->
+  case response do
+    {:status, _status}  -> 404
+    {:headers, _headers} -> %{}
+    {:body, _body} -> ""
+  end
+end
+\end{lstlisting}
+  \caption{The function blanker is a simple lambda function which can be used in a transformer. It sets the status to 404 and removes all headers and data by simply ignoring the received values. The actual data in status, headers and body are discarded by using an underscore at the start of the variables in the pattern matching.}
+\end{figure}
+
+\subsection{Timers}
+Crocodile Pear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. They can be used anonymously or with labels attached to them and will output data to the default logger.
+
+However, because of the asynchronous nature of Crocodile Pear, the logged time is when a function has been executed - not when its returned producers has finished executing.
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+12:12:28.719 [info]  {1424, 171548, 716696} (Got URL)
+
+12:12:28.724 [info]  {1424, 171548, 721651} (Executed request)
+
+12:12:29.753 [info]  {1424, 171549, 753316} (Collected response)
+
+12:12:29.753 [info]  {1424, 171549, 753396} (Got body)
+
+12:12:29.763 [info]  {1424, 171549, 763664} (Decoded JSON)
+
+12:12:29.763 [info]  {1424, 171549, 763702} (Extracted data)
+
+12:12:29.764 [info]  {1424, 171549, 763987} (Mapped image url)
+
+12:12:29.764 [info]  {1424, 171549, 764107} (Executed request)
+
+12:12:29.765 [info]  {1424, 171549, 765113} (Added transform function)
+
+12:12:30.700 [info]  {1424, 171550, 700280} (Responded to query)
+\end{lstlisting}
+  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \{MegaSecs, Secs, Microsecs\}, optional message.}
+\end{figure}
+
+\section{Examples}
 
 \cleardoublepage
 \phantomsection
