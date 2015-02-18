@@ -476,26 +476,24 @@ end
 \subsection{Timers}
 Crocodile Pear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. They can be used anonymously or with labels attached to them and will output data to the default logger.
 
-However, because of the asynchronous nature of Crocodile Pear, the logged time is when a function has been executed - not when the returned producers has finished executing.
-
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-12:12:28.719 [info]  {1424, 171548, 716696} (Got URL)
-12:12:28.724 [info]  {1424, 171548, 721651} (Executed request)
-12:12:29.753 [info]  {1424, 171549, 753316} (Collected response)
-12:12:29.753 [info]  {1424, 171549, 753396} (Got body)
-12:12:29.763 [info]  {1424, 171549, 763664} (Decoded JSON)
-12:12:29.763 [info]  {1424, 171549, 763702} (Extracted data)
-12:12:29.764 [info]  {1424, 171549, 763987} (Mapped image url)
-12:12:29.764 [info]  {1424, 171549, 764107} (Executed request)
-12:12:29.765 [info]  {1424, 171549, 765113} (Added transform function)
-12:12:30.700 [info]  {1424, 171550, 700280} (Responded to query)
-\end{lstlisting}
-  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \{MegaSecs, Secs, Microsecs\}, optional message.}
-\end{figure}
+10:41:57.437 [info]  {1424, 252517, 434960} (Got URL)
+10:41:58.187 [info]  {1424, 252518, 187494} [headers] (Executed request) on #PID<0.256.0>
+10:41:58.187 [info]  {1424, 252518, 187591} [status] (Executed request) on #PID<0.256.0>
+10:41:58.187 [info]  {1424, 252518, 187728} [chunk] (Executed request) on #PID<0.256.0>
 
-Bättre asynkron mätning kanske kommer fixas?!
+[...]
+
+10:41:59.529 [info]  {1424, 252519, 529096} [status] (Added transform function) on #PID<0.431.0>
+10:41:59.529 [info]  {1424, 252519, 529177} [headers] (Added transform function) on #PID<0.431.0>
+10:41:59.543 [info]  {1424, 252519, 543830} [chunk] (Added transform function) on #PID<0.431.0>
+10:41:59.544 [info]  {1424, 252519, 543943} [done] (Added transform function) on #PID<0.431.0>
+10:41:59.544 [info]  {1424, 252519, 544106} (Responded to query)
+\end{lstlisting}
+  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \{MegaSecs, Secs, Microsecs\}, [message atom] optional message (producer PID if present).}
+\end{figure}
 
 \subsection{Concatenate JSON}
 The function $concatenate\_json$ takes a list of producers, consumes them and returns a new producer. The new producers chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data.
@@ -617,18 +615,27 @@ uris
   \caption{Using timers in the pipeline.}
 \end{figure}
 
-The logger would then give the following output:
+The logger for this pipeline would produce an output similar to:
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-13:46:53.625 [info]  {1424, 177213, 625128} (got URIs)
-13:46:53.625 [info]  {1424, 177213, 625228} (created requests)
-13:46:53.625 [info]  {1424, 177213, 625576} (added transformer)
-13:46:53.626 [info]  {1424, 177213, 625658} (concatenated to JSON)
-13:46:53.735 [info]  {1424, 177213, 735330} (started responding)
+10:47:49.795 [info]  {1424, 252869, 793251} (got URIs)
+10:47:49.815 [info]  {1424, 252869, 796360} [status] (concatenated to JSON) on #PID<0.311.0>
+10:47:49.821 [info]  {1424, 252869, 815637} [headers] (concatenated to JSON) on #PID<0.311.0>
+10:47:49.894 [info]  {1424, 252869, 890575} [headers] (created requests) on #PID<0.288.0>
+10:47:49.894 [info]  {1424, 252869, 894745} [headers] (created requests) on #PID<0.282.0>
+10:47:49.895 [info]  {1424, 252869, 891617} [headers] (created requests) on #PID<0.280.0>
+10:47:49.895 [info]  {1424, 252869, 891539} [headers] (created requests) on #PID<0.284.0>
+10:47:49.895 [info]  {1424, 252869, 894894} [status] (created requests) on #PID<0.282.0>
+
+[...]
+
+10:47:49.903 [info]  {1424, 252869, 903675} [chunk] (concatenated to JSON) on #PID<0.311.0>
+10:47:49.903 [info]  {1424, 252869, 903826} [done] (concatenated to JSON) on #PID<0.311.0>
+10:47:49.904 [info]  {1424, 252869, 903948} (started responding)
 \end{lstlisting}
-  \caption{How the timer would log during the pipeline.}
+  \caption{Example output from using timers in a pipline.}
 \end{figure}
 
 \cleardoublepage
