@@ -359,6 +359,19 @@ Cloud providers, such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_micr
   \caption{How cloud providers such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_microsoft} charges based if the traffic is over WAN or in the same cloud region.}
 \end{figure}
 
+\section{Secure point of entry in private networks}
+It is not uncommon for corporations to have several internal services with APIs which are protected within a private network. A VPN, virtual private network, can be used to give outside clients access to services inside the private network but can have the side effect of exposing to much of the private network.
+
+Another approach is to place an API-gateway inside the DMZ of the private network. By doing so, outside clients can access the API-gateway as a single point of entry for all internal APIs. The API-gateway can be configured to expose some of the internal APIs and proxy them to outside clients.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_dmz.png}
+    \end{center}
+  \caption{An API-gateway used as a secure way of exposing internal services in a private network to the outside world.}
+\end{figure}
+
 \section{Latency}
 
 \section{Authentication}
@@ -635,7 +648,7 @@ The logger for this pipeline would produce an output similar to:
 10:47:49.903 [info]  {1424, 252869, 903826} [done] (concatenated to JSON) on #PID<0.311.0>
 10:47:49.904 [info]  {1424, 252869, 903948} (started responding)
 \end{lstlisting}
-  \caption{Example output from using timers in a pipline.}
+  \caption{Example output from using timers in a pipeline.}
 \end{figure}
 
 \cleardoublepage
@@ -643,6 +656,17 @@ The logger for this pipeline would produce an output similar to:
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plain}
 \bibliography{anton_msc}
+
+\begin{appendices}
+\chapter{Definitions}
+\section{JSON}
+JSON, JavaScript Object Notation, is a data-interchange text format based on a subset of the JavaScript Programming Language. It is an open standard format which uses human-readable text. JSON is an alternative to XML.
+
+\section{XML}
+XML, Extensible Markup Language, is a markup language used for decoding documents. It can be used as an alternative to JSON among many other document formats.
+
+\section{DMZ}
+\end{appendices}
 
 %\makebibliography{anton_msc}
 
