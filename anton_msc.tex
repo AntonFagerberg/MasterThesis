@@ -693,6 +693,8 @@ In addition, the client transformed certain data types after retrieving it from 
 
 In production, a measurement was made to determine the number of cases in the muniplicity of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes where 19 and the maximum number of cases in one inbox where 296. This means that on average, the number of requests performed every time an inbox is checked is roughly 40 - 60. When the largest inbox is checked, the number of requests will be in between 600 - 900 every time it is clicked - a substantial bottleneck for browsers on the HTTP 1.1 stack when looking at the TCP max-connection limit and various textual overhead.
 
+It should be noted that the final version of the web-client most likely will be limited to displaying 10 - 20 cases at a time. This would reduce the number of requests to 20 - 60 for any given inbox. This is however still a substantial amount of HTTP requests to perform every time a user check an inbox. This approach will not address the problem of the 86\% data overhead which is seen with the current API design.
+
 \cleardoublepage
 \phantomsection
 \addcontentsline{toc}{chapter}{Bibliography}
