@@ -651,6 +651,43 @@ The logger for this pipeline would produce an output similar to:
   \caption{Example output from using timers in a pipeline.}
 \end{figure}
 
+\chapter{Cases studies}
+\section{Streamflow}
+Streamflow\cite{streamflow} is a system used in municipalities to communicate with its citizens or organisations with their customers. It is used to register and track customer cases and works as a case management hub.
+
+Streamflow has a REST HATEOAS API which returns JSON objects. The client for Streamflow is written in Swing-based and Java but a new client is being developed which is written in AngularJS. The following case study has used the in-development AngularJS client.
+
+\subsection{Case lists}
+Incoming cases to Streamflow goes in to a certain category defined by the municipality or organisation. Every category has two folders: inbox and my cases. When clicking "inbox" or "my cases" for a category, all cases in that folder will be fetched from the server will be displayed in a list.
+
+When fetching the case list, several requests will be executed:
+\begin{enumerate}
+	\item Fetch a list of all cases. This will return a list of CaseDTO-objects which are ~0.9KB per object.
+	\item Fetch the cases. This will return the same CaseDTO-object once more. The reason for executing this request is to discover the next resource: general. The wanted payload, the "general" resource, is ~94 bytes while the total response is 3.5 - 4 KB resulting in a overhead 97.5\% of unnecessary data.
+	\item Fetch the "general" resource. From this response, the client wants two fields: a date and a note. It also wants the next resource "priorities" - if the case has it, not all cases have a priority. The total response is 1.5 - 2 KB and the wanted data is ~130 B resulting in a unwanted overhead of 92.5\%.
+	\item If the cases has a priority, that priority has to be fetched. This response is ~293 B and will contain information about all priority levels - usually four levels. Each case only has one priority which results in a 75\% overhead.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/streamflow_cases.png}
+    \end{center}
+  \caption{How the recursive HATEOAS requests are executed in the Streamflow web-client.}
+\end{figure}
+
+By placing a API-gateway written with Crocodile Pear in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated to one request with one response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as CaseDTO-objects, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/streamflow_response.png}
+    \end{center}
+  \caption{Illustration of the responses from Streamflow. The data wanted in the list view is highlighted with bold text.}
+\end{figure}
+
+In the test environment, measurements where made on a list with 156 cases. For these 156 cases, the client had to execute 373 requests (1 request for the list, 156 for each request, 156 for general for each request, and 60 priority for the cases which needed them). All these request could be replaced with one single request to the API-gateway. By doing so, the load time for the client was reduced by 55\%. The total transmitted data was reduced from 1100 KB to 159 KB - a 86\% decrease.
+
 \cleardoublepage
 \phantomsection
 \addcontentsline{toc}{chapter}{Bibliography}
@@ -664,6 +701,8 @@ JSON, JavaScript Object Notation, is a data-interchange text format based on a s
 
 \section{XML}
 XML, Extensible Markup Language, is a markup language used for decoding documents. It can be used as an alternative to JSON among many other document formats.
+
+\section{HATEOAS}
 
 \section{DMZ}
 \end{appendices}
