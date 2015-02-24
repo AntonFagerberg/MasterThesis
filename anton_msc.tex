@@ -393,7 +393,7 @@ Two other important influences for choosing Elixir in this prototype are the pip
 \subsection{The pipe operator}
 One of the integral parts of Elixir is the pipe operator: $|>$. The pipe operator takes the output from the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: $|$.
 
-As an example, we can take a look at the following hard to read code:
+As an example, we can take a look at the following nested and hard to read code:
 
 \begin{figure}[H]
   \centering
@@ -410,34 +410,34 @@ The code from the figure above can be rewritten using the pipe operator which re
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{The same Elixir code written with the pipe operator.}
+  \caption{The same code as in previous figure but written with the pipe operator.}
 \end{figure}
 
-This also makes you read and reason about the code in a better way. Wehn you read it, you might say something like: "First I have the range of numbers, then I map over it, then I filter them, then I sum them".
+This also makes you reason about the code in a better way. When you read it, you might say something like: "First I have the range of numbers, then I map over it, then I filter them, then I sum them".
 
 The pipe operator is also an important part in how Crocodile Pear works, as it pipes requests to a result, potentially through transformations along the way.
 
 \subsection{Elixir processes}
-Processes are Elixir's term for using the Actors model for its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. They run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
+Processes are Elixir's term for using the Actors model as its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. They run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing an end-point for the clients and way for them to receive responses over HTTP for their requests.
+Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing an end-point for the clients and a way for them to receive responses over HTTP for their requests.
 
 \subsection{HTTPoison}
-Internally, Crocodile Pear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and is used for executing HTTP requests. The HTTPoison library are only strictly used internally and it is abstracted away to ensure that it can be removed or replaced in the future. 
+Internally, Crocodile Pear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used for performing HTTP requests. The HTTPoison library is only strictly used internally and it is abstracted away to ensure that it can be removed or replaced in the future. However, it is included as a project dependency and its use in encouraged for developed-defined transformers etc.
 
 \section{High-level concept}
 
 \subsection{Data}
-The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response - in this document called the body (not to be confused with the HTML body-tag).
+The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag, and additional meta-data mainly used within Crocodile Pear.
 
 \subsection{Producer \& Consumer}
-The key component in Crocodile Pear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers as fully asynchronous Elixir processes which communicate by passing messages. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
+The key component in Crocodile Pear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-send(producer, { :ready, self })	
+send(producer, { self, :ready })	
 \end{lstlisting}
   \caption{The consumer sends a tuple with status "ready" and the identity of itself, using the function self(), to the producer when it is ready to receive data.}
 \end{figure}
@@ -452,15 +452,15 @@ The identity of the producer is always known to the consumer via an Elixir PID, 
   \caption{Message passing between a producer and a consumer. Time goes from left to right.}
 \end{figure}
 
-After the producer has been notified that a consumer is ready to consume its data, it must first respond with the status and the headers. After that, the chunks must be sent in order. Finally, a done message is sent indicating that the producer will terminate and all chunks have been sent.
+After the producer has been notified that a consumer is ready to consume its data, it must first respond with the status, the headers and the meta data. After that, the chunks must be sent in order. Finally, a done message is sent indicating that the producer will terminate and all chunks have been sent.
 
 \section{Pipeline}
-The pipeline is what ties all parts in Crocodile Pear together. The pipeline follows a simple rule: every intermediate function should take a list of producer PIDs as its first argument and return a new list of producer PIDs.
+The pipeline is what ties all pieces in Crocodile Pear together. The pipeline follows a simple rule: every intermediate function should take a list of producer PIDs as its first argument and return a new list of producer PIDs.
 
 The two exceptions are the two functions $request$ and $response$ which is the beginning and the end of a pipeline.
 
 \subsection{Request}
-The $request$ function in Crocodile Pear takes one URI, or a list of URIs, and will always return a list of producer PIDs. Each producer will produce the result of an HTTP request to the specified URI.
+The $request$ function in Crocodile Pear takes an arbitrary amount of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST etc. The $request$ will always return a list of producer PIDs. Each producer will produce the result of a HTTP request to the specified URI.
 
 \subsection{Response}
 The $response$ function takes a list of producers and turns this in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed to the $response$ function, the first responding producer will be consumed first which means that the response order is not deterministic. However, the first responding producer will be consumed until fully completed before any other producer is consumed which guarantees that the chunks will not be mixed together.
@@ -688,6 +688,10 @@ By placing a API-gateway written with Crocodile Pear in between the Streamflow w
 \end{figure}
 
 In the test environment, measurements where made on a list which had 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API-gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
+
+In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field "dueOn" was truncated from "2015-02-17T23:59:59.000Z" to "2015-02-17". Using the API-gateway, these transformations could be taken care of before replying to the client. This means that no potentially demanding transformations had to be done on the client and instead the data could be used directly on response.
+
+In production, a measurement was made to determine the number of cases in the muniplicity of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes where 19 and the maximum number of cases in one inbox where 296. This means that on average, the number of requests performed every time an inbox is checked is roughly 40 - 60. When the largest inbox is checked, the number of requests will be in between 600 - 900 every time it is clicked - a substantial bottleneck for browsers on the HTTP 1.1 stack when looking at the TCP max-connection limit and various textual overhead.
 
 \cleardoublepage
 \phantomsection
