@@ -276,6 +276,11 @@ An API gateway works as an additional layer between the client and the server. F
   \caption{A simple scenario using an API gateway between a client and a back-end API.}
 \end{figure}
 
+\section{Different client needs}
+Nowadays it is very common for different types of clients to consume the same API. One can imagine an image service with a API that returns a list of the latest uploaded images. Depending on what type of client is requesting this data, the API gateway can regulate the number of returned images. If the requesting device is a small mobile phone, the API gateway can chose to return a lot fewer images than if the requesting device was connected to a large wall monitor.
+
+A similar approach has been implemented at Netflix where each client development team write their own adaptor code at the back-end to fully optimise the underlying API for that client needs, much like in the same fashion as an API-gateway works\cite{netflix}.
+
 \section{Multiple resources \& requests}
 A client often has to perform many requests simultaneously, either to one or multiple back-end APIs. Typical scenarios are when a user loads a web application for the first time and the applications initial state and data has to be retrieved or when multiple connected resources has to be loaded.
 
@@ -402,7 +407,19 @@ Instead of rewriting many of the already released clients to fit the new API-ver
 
 \section{Analytics}
 
-API-gateways are in a perfect position to collect data using in analytics.
+API-gateways are in a perfect position to collect data to be used in analytics since the API-gateway is able to monitor all traffic between the clients and the back-ends. It is easy to collect a variety of data such as:
+\begin{itemize}
+	\item Client technology, the browsers user-agent which is sent with request headers is one way to collect a variety of data. Example: User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:37.0) Gecko/20100101 Firefox/37.0.
+	\item Request-response time for both the client and individual back-end APIs.
+	\item Latency from different back-end APIs.
+	\item Geolocation from HTML 5 geolocation API\cite{html5_geolocation} or by geolocating the requesting IP address.
+	\item Errors from back-end APIs.
+	\item Invalid client requests.
+	\item Traffic peak hours.
+	\item Suspicious client behaviour such password or denial of service attacks.
+\end{itemize}
+
+Since performance is a big factor in API-gateways, the collected data should preferably be delegated to and stored in a third-party analytics engine.
 
 \chapter{Crocodile Pear - API-gateway prototype}
 
