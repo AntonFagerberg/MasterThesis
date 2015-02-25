@@ -651,11 +651,38 @@ The logger for this pipeline would produce an output similar to:
   \caption{Example output from using timers in a pipeline.}
 \end{figure}
 
+\subsection{Simple authentication}
+While security is mostly out of the scope for this text (see TODO chapter), a small example was created to illustrate how a simple security mechanism can work within Crocodile Pear.
+
+In this example, a username and password is retrieved from the URL - note that this is not secure and this approach should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we specify a HTTP Basic Auth header with a valid username and password to authenticate with the back-end system.
+
+What this illustrates is that we can have different credentials for the API-gateway and the back-end APIs. Crocodile Pear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+get "/http-basic-auth/:user/:password" do
+  headers =
+    if (user == "test_user" and password == "test_password") do
+      [authorization: "Basic #{Base.encode64("administrator:administrator")}"]
+    else
+      []
+    end
+  
+  %{url: "https://api-url/", headers: headers}
+  |> request
+  |> response(conn)
+end
+\end{lstlisting}
+  \caption{Simple authentication example.}
+\end{figure}
+
+
 \chapter{Cases studies}
 \section{Streamflow}
 Streamflow\cite{streamflow} is a system used in municipalities to communicate with its citizens or organisations with their customers. It is used to register and track customer cases and works as a central case management hub.
 
-Streamflow has a HATEOAS API which responds with JSON. The client for Streamflow is written in Swing using Java, but a new web-client written in AngularJS is currently under development. The following case study has used the in-development AngularJS client with HTTP 1.1.
+Streamflow has a HATEOAS API which responds with JSON. The client for Streamflow is written in Swing using Java, but a new web-client written in AngularJS is currently under development. The following case study has used the in-development AngularJS client 1.1 using the existing production API over HTTP 1.1.
 
 \subsection{Case lists}
 In Streamflow, incoming cases are categorised by the municipality or organisation. Each category has two folders: "inbox" and "my cases". When clicking "inbox" or "my cases" for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
@@ -679,6 +706,10 @@ When requesting the case list, several recursive requests will be executed from 
 
 By placing a API-gateway written with Crocodile Pear in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated to one request with one response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as duplicate case-objects, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
 
+In the test environment, measurements where made on a list which had 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API-gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
+
+In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field "dueOn" was truncated from "2015-02-17T23:59:59.000Z" to "2015-02-17". Using the API-gateway, these transformations could be taken care of before replying to the client. This means that no potentially demanding transformations had to be done on the client and instead the data could be used directly on response.
+
 \begin{figure}[H]
   \centering
     \begin{center}
@@ -687,11 +718,7 @@ By placing a API-gateway written with Crocodile Pear in between the Streamflow w
   \caption{Illustration of the responses (case, general and priorities) from Streamflow. The actual data needed in the list view is highlighted.}
 \end{figure}
 
-In the test environment, measurements where made on a list which had 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API-gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
-
-In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field "dueOn" was truncated from "2015-02-17T23:59:59.000Z" to "2015-02-17". Using the API-gateway, these transformations could be taken care of before replying to the client. This means that no potentially demanding transformations had to be done on the client and instead the data could be used directly on response.
-
-In production, a measurement was made to determine the number of cases in the muniplicity of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes where 19 and the maximum number of cases in one inbox where 296. This means that on average, the number of requests performed every time an inbox is checked is roughly 40 - 60. When the largest inbox is checked, the number of requests will be in between 600 - 900 every time it is clicked - a substantial bottleneck for browsers on the HTTP 1.1 stack when looking at the TCP max-connection limit and various textual overhead.
+In production, a measurement was made to determine the number of cases in the municipality of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes where 19 and the maximum number of cases in one inbox where 296. This means that on average, the number of requests performed every time an inbox is checked is roughly 40 - 60. When the largest inbox is checked, the number of requests will be in between 600 - 900 every time it is clicked - a substantial bottleneck for browsers on the HTTP 1.1 stack when looking at the TCP max-connection limit and various textual overhead.
 
 It should be noted that the final version of the web-client most likely will be limited to displaying 10 - 20 cases at a time. This would reduce the number of requests to 20 - 60 for any given inbox. This is however still a substantial amount of HTTP requests to perform every time a user check an inbox. This approach will not address the problem of the 86\% data overhead which is seen with the current API design.
 
