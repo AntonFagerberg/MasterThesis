@@ -373,14 +373,36 @@ Another approach is to place an API-gateway inside the DMZ of the private networ
 \end{figure}
 
 \section{Latency}
+One of the goals of an API-gateway is to reduce latency in the communication between the client and the back-end. Because of this, the placement of the API-gateway, from a network point of view, is very important. 
 
-\section{Authentication}
+The first approach is to place the gateway on the same LAN or together with the client. Placing the API-gateway on the same machine as the client is rarely possible or practical. It complicates updating the gateway and defeats much its purpose. 
+
+Placing the API-gateway inside the same LAN as the client can be a good solution, for example when used inside corporation. The constraint with this approach is that no outside clients, such as smartphones not connected to the LAN, will be able to avoid the extra latency - or may not be able to connect at all based on the LAN security. However, this is an approach which doesn't introduce double latency.
+
+The second approach is to place the API-gateway as a separate application in its own cloud or server hall. While this can potentially be the only solution for certain hosting setups, this introduce the problem of double latency. Since the TCP-packets has to go through two WAN connections, both of them can introduce a substantial amount of latency which can worsen the response time instead of improving it.
+
+The final approach placing the API-gateway on the same LAN as the back-end system. This is in many cases the best approach as it avoids the double latency, gives access to outside clients and is flexible with updates. The problem with double latency can however arise if the API-gateway is communicating with several systems which are placed on different LANs. In such a scenario, several factors have to be considered before deciding which LAN to place the gateway in such as the which back-end API has the most traffic, bandwidth costs between LANs, the latency between the different LANs and so on.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_latency.png}
+    \end{center}
+  \caption{How latency affect the different placement strategies for the API-gateway.}
+\end{figure}
+
+\section{Security - authentication \& authorisation}
+API-gateway security is a complex issue which in all but the simplest cases should be solved outside the implementation of the gateway itself. What makes an API-gateway complex from a security point of view is the fact that one end-point provided from the API-gateway can communicate with several back-end systems, all of which may have different authentication and authorisation protocols. Because of this, a single sign-on service outside the API-gateway itself is a good approach for the complex API-gateways which integrate with several back-end systems with their own security requirements.
 
 \section{Support older API versions}
 
-\section{SSL}
+It happens that API makes breaking changes when moving on to newer versions. Fields can be added, renamed or removed. In such scenarios, old clients may have to be updated to work with these API changes.
 
-\section{Metrics \& analytics}
+Instead of rewriting many of the already released clients to fit the new API-version, an API-gateway can in some cases be used to translate the new API format to the old one. How feasible this is depends on what kind of changes has been introduced and whether they are destructive or not.
+
+\section{Analytics}
+
+API-gateways are in a perfect position to collect data using in analytics.
 
 \chapter{Crocodile Pear - API-gateway prototype}
 
