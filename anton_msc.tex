@@ -747,6 +747,8 @@ By placing a API-gateway written with Crocodile Pear in between the Streamflow w
 
 In the test environment, measurements where made on a list which had 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API-gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
 
+The Streamflow API also doesn't compress the responses. By adding a gzip compression in the API-gateway before responding to the client, the data could be reduced even more, from 1,100 KB to 9.9 KB - a 99\% decrease of transmitted data!
+
 In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field "dueOn" was truncated from "2015-02-17T23:59:59.000Z" to "2015-02-17". Using the API-gateway, these transformations could be taken care of before replying to the client. This means that no potentially demanding transformations had to be done on the client and instead the data could be used directly on response.
 
 \begin{figure}[H]
