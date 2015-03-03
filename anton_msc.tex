@@ -453,7 +453,7 @@ An API-gateway can easily collect analytics from HTTP data such as:
 
 Since performance is a top priority in API-gateways, the collected data should preferably be delegated to and stored and processed using a third-party analytics engine.
 
-\chapter{Crocodile Pear: API-gateway framework}
+\chapter{CrocodilePear: API-gateway framework}
 
 \section{Language \& Libraries}
 \subsection{Elixir}
@@ -486,26 +486,26 @@ The code from the figure above can be rewritten using the pipe operator which re
 
 This also has the good side-effect that ti makes you reason about the code in a better way. When you read it, you might say something like: "First I have the range of numbers, then I map over it, then I filter them, then I sum them".
 
-The pipe operator is an important part in how Crocodile Pear works, as it pipes requests to a result, potentially through transformations along the way. This makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) for exposing endpoints and piping requests to the client.
+The pipe operator is an important part in how CrocodilePear works, as it pipes requests to a result, potentially through transformations along the way. This makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) for exposing endpoints and piping requests to the client.
 
 \subsection{Elixir processes}
 Processes are Elixir's term for utilising the Actors model as its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing end-points to the clients to which they can send requests, and a way for the API-gateway to send responses back over HTTP to the clients.
+Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In CrocodilePear, Plug is utilised for exposing end-points to the clients to which they can send requests, and a way for the API-gateway to send responses back over HTTP to the clients.
 
 \subsection{HTTPoison}
-Internally, Crocodile Pear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away to simplify the API-gateway development and ensure that it can be removed or replaced in the future.
+Internally, CrocodilePear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away to simplify the API-gateway development and ensure that it can be removed or replaced in the future.
 
 \section{High-level concept}
 
 \subsection{Data}
-The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag. 
+The data used in CrocodilePear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag. 
 
 In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves.
 
 \subsection{Processes: producers \& consumers}
-The key component in Crocodile Pear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
+The key component in CrocodilePear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
 
 \begin{figure}[H]
   \centering
@@ -530,12 +530,12 @@ After the producer has been notified that a consumer is ready to consume its dat
 All Elixir processes, the consumers and producers, are abstracted away from the end-user of the framework. Instead, the end-user only works with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has in practice no performance penalty while it does makes the development a whole lot easier. There is, however, nothing that hinders a developer to work on the lower process level if that for some reason is wanted.
 
 \section{Pipeline}
-The pipeline is what ties all pieces in Crocodile Pear together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
+The pipeline is what ties all pieces in CrocodilePear together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
 
 The two exceptions are the functions $request$ and $response$ which normally are the beginning and the end of each pipeline. It is also possible to mix a CrocodilePear pipeline with a normal function pipeline in Elixir, this is explored further in the examples below.
 
 \subsection{Request}
-The $request$ function in Crocodile Pear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST and so on. The $request$ will always return a list of producer PIDs. Each producer will produce the response from one HTTP request from the specified URL.
+The $request$ function in CrocodilePear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST and so on. The $request$ will always return a list of producer PIDs. Each producer will produce the response from one HTTP request from the specified URL.
 
 \subsection{Response}
 The $response$ function takes a list of producers and turns them in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed to the $response$ function, the first responding producer will be consumed first which means that the response order is not deterministic --- if not explicitly defined so. However, the first responding producer will be consumed fully before any other producer is consumed which guarantees that the chunks will not be mixed together.
@@ -562,7 +562,7 @@ end
 \end{figure}
 
 \subsection{Timers}
-Crocodile Pear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output data to the default logger. The timers also work with the underlying concurrency model which means that every single chunk in from any of the processes can be timed individually.
+CrocodilePear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output data to the default logger. The timers also work with the underlying concurrency model which means that every single chunk in from any of the processes can be timed individually.
 
 \begin{figure}[H]
   \centering
@@ -730,11 +730,11 @@ The logger for this pipeline would produce an output similar to:
 \end{figure}
 
 \subsection{Simple authentication}
-While security is mostly outside the scope of this text (see page~\pageref{sec:security}), a small example was created to illustrate how a simple security mechanism can work within Crocodile Pear.
+While security is mostly outside the scope of this text (see page~\pageref{sec:security}), a small example was created to illustrate how a simple security mechanism can work within CrocodilePear.
 
 In this example, a username and password is retrieved from the URL --- note that this is a not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we specify a HTTP Basic Auth header with a valid username and password to authenticate with the back-end system.
 
-What this illustrates is that we can have different credentials for the API-gateway and the back-end APIs. Crocodile Pear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
+What this illustrates is that we can have different credentials for the API-gateway and the back-end APIs. CrocodilePear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
 
 \begin{figure}[H]
   \centering
@@ -823,6 +823,7 @@ REST, Representational State Transfer, consists of guidelines and best practices
 HATEOAS, Hypermedia as the Engine of Application State, is a constraint to the REST architecture. The clients enters a REST application through a fixed URL and all future actions are discovered dynamically within resource representations from the server.
 
 \section{DMZ}
+DMZ, DeMilitarised  Zone, is an isolated subnet located outside the protected LAN where workstations and internal back-end systems are located. It is common that machines which have to be directly exposed from the internet are placed inside the DMZ.
 
 \end{appendices}
 
