@@ -424,6 +424,7 @@ The problem with double latency can however arise and be unavoidable if the API-
 \end{figure}
 
 \section{Security - authentication \& authorisation}
+\label{sec:security}
 API-gateway security is, like all security scenarios, a complex issue. All but the simplest cases should be solved outside the implementation of the gateway itself. What makes an API-gateway complex from a security point of view is the fact that one end-point provided from the API-gateway can communicate with several back-end systems, all of which can utilise different authentication and authorisation protocols. Because of this, a single sign-on service provided outside the API-gateway itself is a good approach for the more complex API-gateways which integrate with several back-end systems.
 
 Further in-depth discussion around this topic is outside the scope of this document
@@ -452,7 +453,7 @@ An API-gateway can easily collect analytics from HTTP data such as:
 
 Since performance is a top priority in API-gateways, the collected data should preferably be delegated to and stored and processed using a third-party analytics engine.
 
-\chapter{Crocodile Pear - API-gateway prototype}
+\chapter{Crocodile Pear: API-gateway framework}
 
 \section{Language \& Libraries}
 \subsection{Elixir}
@@ -480,28 +481,30 @@ The code from the figure above can be rewritten using the pipe operator which re
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{The same code as in previous figure but written with the pipe operator.}
+  \caption{The same code as in the previous figure but written with the pipe operator.}
 \end{figure}
 
-This also makes you reason about the code in a better way. When you read it, you might say something like: "First I have the range of numbers, then I map over it, then I filter them, then I sum them".
+This also has the good side-effect that ti makes you reason about the code in a better way. When you read it, you might say something like: "First I have the range of numbers, then I map over it, then I filter them, then I sum them".
 
-The pipe operator is also an important part in how Crocodile Pear works, as it pipes requests to a result, potentially through transformations along the way.
+The pipe operator is an important part in how Crocodile Pear works, as it pipes requests to a result, potentially through transformations along the way. This makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) for exposing endpoints and piping requests to the client.
 
 \subsection{Elixir processes}
-Processes are Elixir's term for using the Actors model as its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. They run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
+Processes are Elixir's term for utilising the Actors model as its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing an end-point for the clients and a way for them to receive responses over HTTP for their requests.
+Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In Crocodile Pear, Plug is utilised for exposing end-points to the clients to which they can send requests, and a way for the API-gateway to send responses back over HTTP to the clients.
 
 \subsection{HTTPoison}
-Internally, Crocodile Pear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used for performing HTTP requests. The HTTPoison library is only strictly used internally and it is abstracted away to ensure that it can be removed or replaced in the future. However, it is included as a project dependency and its use in encouraged for developed-defined transformers etc.
+Internally, Crocodile Pear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away to simplify the API-gateway development and ensure that it can be removed or replaced in the future.
 
 \section{High-level concept}
 
 \subsection{Data}
-The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag, and additional meta-data mainly used within Crocodile Pear.
+The data used in Crocodile Pear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag. 
 
-\subsection{Producer \& Consumer}
+In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves.
+
+\subsection{Processes: producers \& consumers}
 The key component in Crocodile Pear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
 
 \begin{figure}[H]
@@ -519,45 +522,47 @@ The identity of the producer is always known to the consumer via an Elixir PID, 
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/crocpear_producer_consumer.png}
     \end{center}
-  \caption{Message passing between a producer and a consumer. Time goes from left to right.}
+  \caption{Message passing between a producer and a consumer. Time flows from left to right.}
 \end{figure}
 
 After the producer has been notified that a consumer is ready to consume its data, it must first respond with the status, the headers and the meta data. After that, the chunks must be sent in order. Finally, a done message is sent indicating that the producer will terminate and all chunks have been sent.
 
-\section{Pipeline}
-The pipeline is what ties all pieces in Crocodile Pear together. The pipeline follows a simple rule: every intermediate function should take a list of producer PIDs as its first argument and return a new list of producer PIDs.
+All Elixir processes, the consumers and producers, are abstracted away from the end-user of the framework. Instead, the end-user only works with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has in practice no performance penalty while it does makes the development a whole lot easier. There is, however, nothing that hinders a developer to work on the lower process level if that for some reason is wanted.
 
-The two exceptions are the two functions $request$ and $response$ which is the beginning and the end of a pipeline.
+\section{Pipeline}
+The pipeline is what ties all pieces in Crocodile Pear together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
+
+The two exceptions are the functions $request$ and $response$ which normally are the beginning and the end of each pipeline. It is also possible to mix a CrocodilePear pipeline with a normal function pipeline in Elixir, this is explored further in the examples below.
 
 \subsection{Request}
-The $request$ function in Crocodile Pear takes an arbitrary amount of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST etc. The $request$ will always return a list of producer PIDs. Each producer will produce the result of a HTTP request to the specified URI.
+The $request$ function in Crocodile Pear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST and so on. The $request$ will always return a list of producer PIDs. Each producer will produce the response from one HTTP request from the specified URL.
 
 \subsection{Response}
-The $response$ function takes a list of producers and turns this in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed to the $response$ function, the first responding producer will be consumed first which means that the response order is not deterministic. However, the first responding producer will be consumed until fully completed before any other producer is consumed which guarantees that the chunks will not be mixed together.
+The $response$ function takes a list of producers and turns them in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed to the $response$ function, the first responding producer will be consumed first which means that the response order is not deterministic --- if not explicitly defined so. However, the first responding producer will be consumed fully before any other producer is consumed which guarantees that the chunks will not be mixed together.
 
-As soon as a chunk from a producer has been consumed by the response function, it will respond to the client with the consumed chunked via a chunked HTTP response.
+As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response.
 
 \subsection{Transformers}
-Transformers is a concept used in Crocodile Pear to manipulate the data when it flows between one, or several, request(s) and a response,
+Transformers are a concept used in CrocodilePear to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model.
 
-A transformer function takes a lambda function as its parameter. This lambda function pattern matches on the three types of messages: the status, the header-map and the combined chunks, the actual payload denoted body, and applies a function on these parts to manipulate them in some way.
+The transformer function takes a lambda function as its only parameter. This lambda is called with the response map, as soon as its available, as its only parameter and allows transformations to take place.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
 blanker = fn(response) ->
-  case response do
-    {:status, _status}  -> 404
-    {:headers, _headers} -> %{}
-    {:body, _body} -> ""
-  end
+  response
+  |> Dict.update!(:status, fn(_discarded_status) -> 404 end)
+  |> Dict.update!(:headers, fn(_discarded_headers) -> %{} end)
+  |> Dict.update!(:body, fn(_discarded_body) -> "" end)
+  |> Dict.update!(:meta, fn(_discarded_meta) -> %{} end)
 end
 \end{lstlisting}
-  \caption{The function blanker is a simple lambda function which can be used in a transformer. It sets the status to 404 and removes all headers and the payload by simply ignoring the received values and providing empty ones instead. The actual data in status, headers and body are discarded by using an underscore at the start of the variables in the pattern matching.}
+  \caption{The function blanker is a simple lambda function which can be used in a transformer. It sets the status to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing corresponding empty values instead. The actual data in status, headers and body are discarded by using an underscore at the start of the function call in Dict.update!.}
 \end{figure}
 
 \subsection{Timers}
-Crocodile Pear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. They can be used anonymously or with labels attached to them and will output data to the default logger.
+Crocodile Pear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output data to the default logger. The timers also work with the underlying concurrency model which means that every single chunk in from any of the processes can be timed individually.
 
 \begin{figure}[H]
   \centering
@@ -579,9 +584,9 @@ Crocodile Pear include timers which can be placed anywhere in the pipeline to be
 \end{figure}
 
 \subsection{Concatenate JSON}
-The function $concatenate\_json$ takes a list of producers, consumes them and returns a new producer. The new producers chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data.
+The function $concatenate\_json$ takes a list of producers, consumes them and returns a new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data. The order is determined based on which producer starts responding first.
 
-Each item in the list will be a JSON-object containing the three keys: status, headers and body (payload). Optionally, if a "true" value is passed in to the function, each item in the list will be only the "body" (payload) with the headers and status omitted.
+Each item in the list will be a JSON-object containing the four keys: status, headers, meta and body (payload). Optionally, if a "true" value is passed in to the function, each item in the list will be only the "body" (payload) with the headers, meta and status omitted.
 
 
 \begin{figure}[H]
@@ -594,10 +599,12 @@ Each item in the list will be a JSON-object containing the three keys: status, h
 
 Even though $concatenate\_json$ takes an arbitrary number of producer PIDs as its argument, it will itself only return one new producer as its result is one JSON list object.
 
+\subsection{Creating end-points}
+todo...
 
 \section{Examples}
 \subsection{Request proxying}
-A simple proxy is a good introductionary example which demonstrates how the request / response pipeline can be used. In this example, we extract an URI from the query string in the connection and pipe it to the $request$ function which in turn is piped into the $response$ function.
+A simple proxy is a good introduction example which demonstrates how the request / response pipeline can be used. In this example, we extract an URI from the query string in the connection and pipe it to the $request$ function which in turn is piped into the $response$ function.
 
 \begin{figure}[H]
   \centering
@@ -609,7 +616,7 @@ conn.query_string
   \caption{A simple proxy.}
 \end{figure}
 
-In a similar fashion, we could take an arbitrary number of requests and proxy them into one result. Here we take several URIs from the query string, separated by the character "|" and pipe them in to the $request$ and $response$ as before. By using Elixirs String.split, a list of strings is created which is passed into the $request$ function.
+In a similar fashion, we could take an arbitrary number of requests and proxy them into one result. Here we take several URIs from the query string, separated by the character "|" and pipe them in to the $request$ and $response$ functions as before. By using Elixirs String.split, a list of strings is created which is passed into the $request$ function.
 
 \begin{figure}[H]
   \centering
@@ -637,7 +644,7 @@ String.split(conn.query_string, "|")
   \caption{Demonstration of the concatenate\_json function.}
 \end{figure}
 
-The response will be one JSON list containing response's status, headers and payload as JSON objects.
+The response will be one JSON list where each item  in the list contains the response's status, headers, meta and payload as an JSON objects.
 
 \subsection{Transformers}
 In this more complex example, we will use all previously explained techniques along with a transformer to create a more powerful end-point. We will go over the code in the following figure line by line.
@@ -645,38 +652,39 @@ In this more complex example, we will use all previously explained techniques al
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-uris =
-  String.split(conn.query_string, "|")
-  |> Enum.map(&("http://api.openweathermap.org/data/2.5/weather?q=#{&1}"))
+get "/temperature" do
+  uris =
+    String.split(conn.query_string, "|")
+    |> Enum.map(&("http://api.openweathermap.org/data/2.5/weather?q=#{&1}"))
 
-temperature_extractor = fn(item) ->
-  case item do
-    { :body, body } ->
+  temperature_extractor = fn(item) ->
+    Dict.update!(item, :body, fn(body) ->
       response_body = Poison.decode!(body)
 
       Map.put(%{}, response_body["name"], response_body["main"]["temp"])
       |> Poison.encode!
-
-    { _other, other } -> other
+    end)
   end
-end
 
-uris
-|> request
-|> transform(temperature_extractor)
-|> concatenate_json(true)
-|> response(conn)
+  uris
+  |> request
+  |> transform(temperature_extractor)
+  |> concatenate_json(true)
+  |> response(conn)
+end
 \end{lstlisting}
   \caption{A complex example with a transformer.}
 \end{figure}
 
-On line 1 - 3, we intercept cities and country codes, such as "Lund,SE|Copenhagen,DK", from the query string sent through the connection and then split them in to a list using the separating character: $|$. This list is then mapped over which will create appropriate URIs for the underlying API which we will use in this example.
+On line 1, we expose the new end-point /temperature from the API-gateway on which we'll wait for GET requests.
 
-On line 5 - 15, we create a new transformer lambda function. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data types using the third-party library Poison\cite{poison}. We will transform the responses and create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again - all other payload data is discarded. The other data, status and headers, will be left intact by defining that "other" returns itself, "other".
+On line 2 - 4, we intercept cities and country codes, such as "Lund,SE|Copenhagen,DK", from the query string sent through the connection and then split them in to a list using the separating character: $|$. This list is then mapped over which will create the appropriate URLs to call for the underlying API which we will use in this example.
 
-On line 17 - 21, we tie everything together using the pipeline. We take the URIs, pipe them into a request, pipe the request in to a transformer with our new function, pipe that in to the concatenate\_json function and pipe that to the response.
+On line 6 - 13, we create a new transformer lambda function. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data types using the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again - the rest of the payload data is discarded. The other response data: status, headers and meta, will be left intact since our function only updates the data stored within they key :body.
 
-In this example, we have used response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
+On line 15 - 19, we tie everything together using the pipeline. We take the URIs, pipe them into a request, pipe the request in to a transformer with our new function $temperature_extractor$, pipe that in to the concatenate\_json function and pipe that to the response.
+
+In this example, we have used request/response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
 
 \subsection{Timers}
 Timers can be used anywhere in the pipeline to output timed logger information.
@@ -695,7 +703,7 @@ uris
 |> response(conn)
 |> timer("started responding")
 \end{lstlisting}
-  \caption{Using timers in the pipeline.}
+  \caption{Utilising timers in the pipeline.}
 \end{figure}
 
 The logger for this pipeline would produce an output similar to:
@@ -722,9 +730,9 @@ The logger for this pipeline would produce an output similar to:
 \end{figure}
 
 \subsection{Simple authentication}
-While security is mostly out of the scope for this text (see TODO chapter), a small example was created to illustrate how a simple security mechanism can work within Crocodile Pear.
+While security is mostly outside the scope of this text (see page~\pageref{sec:security}), a small example was created to illustrate how a simple security mechanism can work within Crocodile Pear.
 
-In this example, a username and password is retrieved from the URL - note that this is not secure and this approach should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we specify a HTTP Basic Auth header with a valid username and password to authenticate with the back-end system.
+In this example, a username and password is retrieved from the URL --- note that this is a not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we specify a HTTP Basic Auth header with a valid username and password to authenticate with the back-end system.
 
 What this illustrates is that we can have different credentials for the API-gateway and the back-end APIs. Crocodile Pear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
 
