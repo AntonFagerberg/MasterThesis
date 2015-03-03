@@ -85,14 +85,16 @@ Leave a \textit{2cm} vertical space after the abstract and provide a few keyword
 \makefrontmatter
 
 \chapter{Performance issues with HTTP 1.1}
-Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP 1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP 2.0), is expected to be released in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP 1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP 1.1 as the protocol used on all web servers and even longer for many legacy systems and clients. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1 even many years after the HTTP/2 release.
+Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP/2.0), is expected to be finalised in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the protocol used on all web servers and middle-boxes such as proxies and firewalls --- and even longer for many legacy systems and clients used in the enterprise environments. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1, even many years after the release of HTTP/2.
 
 \section{Headers}
 \label{headers}
 
-It is common in modern web applications to send a lot of HTTP requests toward a back-end API. These requests can be very small, such as an PUT request to update a single field but the actual payload can also be considered small when retrieving data from the server when it is compared to the total amount of data transmitted. Along with every HTTP request are typically plenty of headers. These headers can be a substantial part of every request and may therefore end up being the performance bottle neck if many small requests has to be transmitted.
+It is common in modern web applications to send a lot of HTTP requests toward one or many back-end APIs. These requests can be very small, such as a PUT request to update a single field, but the actual payload of a HTTP requests can also be considered small in many cases when it is compared to the total amount of data being transfered. There are typically plenty of headers along with every HTTP request and these headers can be a substantial amount of every request and may therefore end up being the performance bottle neck --- especially if a lot of small requests has to be transmitted often.
 
-As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account with a response serialised in JSON format. If a client was built which is supposed to show details about, for example, the 10 specific users. We can then benchmark how making 10 separate API requests would differ, in transmitted data size, from how it would behave if we could fetch all 10 users with one request.
+As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response is serialised in JSON format. 
+
+Suppose client was built which is supposed to show details about, for example, your 10 most followed friends. We can benchmark how making 10 separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all 10 users with one request.
 
 \begin{figure}[H]
   \centering
@@ -102,7 +104,7 @@ As an example, consider the Instagram API\cite{instagram_api} which has an end-p
         "id": "1574083",
         "username": "snoopdogg",
         "full_name": "Snoop Dogg",
-        "profile_picture": "http://distillery...",
+        "profile_picture": "http://distillery[...]",
         "bio": "This is my bio",
         "website": "http://snoopdogg.com",
         "counts": {
@@ -113,17 +115,17 @@ As an example, consider the Instagram API\cite{instagram_api} which has an end-p
     }
 }
     \end{lstlisting}
-  \caption{User data response from the Instagram API in JSON format.}
+  \caption{User data response from the Instagram API encoded in JSON format.}
 \end{figure}
 
-HTTP requests can be benchmarked using cURL\cite{curl}. To make the requests authentic and look like it was made from an actual browser, we tell cURL to use the default headers provided by the browser Firefox. These headers includes among other things browsers the User-Agent, media types which are acceptable responses and so on. A local server running on port 9000 is used to simulate the the Instagram API.
+HTTP requests can be benchmarked using cURL\cite{curl}. To make the requests authentic and look like they were made from an actual browser, we tell cURL to use the default headers provided by the browser Firefox. These headers includes among other things the browsers User-Agent, media types which are acceptable responses and so on. A local server running on port 9000 is used to simulate the the Instagram API in this particular example.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true]
 curl --trace-ascii - 'http://localhost:9000/user/snoopdogg' -H 'Host: localhost:9000' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'
 \end{lstlisting}
-  \caption{cURL command used in the benchmarks.}
+  \caption{The cURL command used in the benchmarks.}
 \end{figure}
 
 Performing this request will give us the following results:
@@ -155,11 +157,12 @@ Performing this request will give us the following results:
 <= Recv data, 286 bytes (0x11e)
 \end{lstlisting}
   \caption{Results from cURL when sending an HTTP request to fetch one user. The actual response payload has been omitted.}
+  \label{fig:headers_overhead}
 \end{figure}
 
-We can from this information see that 355 bytes are sent as header data, 87 bytes are then received as header data (17 + 47 + 21 + 2) and the actual payload is 286 bytes. This means 61\% of every request to this user end-point are nothing but header data.
+We can from the output in Figure~\ref{fig:headers_overhead} that 355 bytes are sent as request header data, 87 bytes are received as response header data (17 + 47 + 21 + 2) and the actual response payload is 286 bytes. This means 61\% of every request to this API end-point are nothing but header data.
 
-If we instead would expose an endpoint where all 10 users could be requested with one HTTP request which returned an array of JSON objects, we would get the following result:
+Some of the header data is often required and it does contain useful information so we can't just discard it. But if we instead would expose one end-point where all ten users could be requested simultaneously with one HTTP request, and that end-point could return an array of JSON objects instead, then we would get away with only transmitting the header data once and not ten times.
 
 \begin{figure}[H]
   \centering
@@ -188,37 +191,42 @@ If we instead would expose an endpoint where all 10 users could be requested wit
 0000:
 <= Recv data, 2871 bytes (0xb37)
 \end{lstlisting}
-  \caption{Results from cURL when performing a HTTP request to fetch 10 users. The actual payload has been omitted.}
+  \caption{Results from cURL when performing one HTTP request to fetch 10 users. The actual response payload has been omitted.}
+  \label{fig:headers_overhead2}
 \end{figure}
 
-From the results, we can see that the size of the sent headers has increased from 355 to 446 bytes because of the longer URL which specifies all users to fetch. The received headers are increased with just one byte from 87 to 88 because of the increased \emph{Content-Length} field. This results in a total header size of 534 bytes. The actual payload has increased from 286 bytes to 2871 bytes - about 10 fold which is expected since we request 10 users at once instead of one at a time. A very small increase in data is added because of the array-characters in the JSON format. By avoiding doing 10 separate requests and instead do one concatenated request, the overhead added because of all the headers have now been reduced from 61\% to 16\%. This number will scale with to the number of requests concatenated - the more requests concatenated, the lesser amount of overhead from HTTP headers.
+From the results in Figure~\ref{fig:headers_overhead2}, we can see that the size of the request headers has been increased from 355 to 446 bytes because of the longer URL which specifies all users to fetch. The response headers are increased with just one byte from 87 to 88 because of the increased \emph{Content-Length} field. This results in a total header size of 534 bytes. The response payload has increased from 286 bytes to 2871 bytes - about ten-fold which is expected since we request 10 users at once instead of one per request. A very small increase in data is added because of the array syntax in the JSON format. 
+
+By not doing ten separate requests, and instead do one concatenated request, the overhead added as a result of all the headers have now been reduced from 61\% to 16\%. This number will scale accordingly to the number of requests concatenated --- the more requests concatenated, the lesser amount of overhead from HTTP headers.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \begin{tabular}{ r | c | c }
         \textbf{\#} & \textbf{10 users, 10 request} & \textbf{10 users, 1 request} \\ \hline
-        Headers & 4,420 B & 534 B \\ \hline
-        Payload & 2,860 B & 2,871 B \\ \hline
+        Total headers & 4,420 B & 534 B \\ \hline
+        Total payload & 2,860 B & 2,871 B \\ \hline
         \% headers of total data & 61\% & 16\% \\ \hline
       \end{tabular}
     \end{center}
-  \caption{Header and payload ratio when doing 10 separate or one concatenated request to fetch users.}
+  \caption{Header and payload ratio when doing ten separate requests, compared to one concatenated request, to fetch all users.}
 \end{figure}
 
-The data displayed in this example should be viewed as a lower bound. In practise, HTTP cookies which are used for personalisation, analytics and session management are also sent with every HTTP request as headers and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
+The header data displayed in this example should be viewed as a lower bound. In practise, HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the headers and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
 
-This is one of the issues that may (ändra "may" om det stämmer när http2 släpps) be mitigated by using HTTP/2 which remembers which headers that has already been sent and therefore doesn't need to retransmit them on subsequent requests\cite[page 222]{HPBN}.
+This is one of the issues that may (ändra "may" om det stämmer när http2 släpps - kolla även HTTP compressions och säkerhetsproblem) be mitigated by using HTTP/2 which remembers which headers that has already been sent and therefore doesn't need to retransmit them on subsequent requests\cite[page 222]{HPBN}.
 
 \section{Maximum TCP connections}
 \label{max_tcp}
-The HTTP 1.X protocol doesn't allow data to be multiplexed over the same connection\cite[p.194]{HPBN}. For this reason, browser vendors has introduced a connection pool of ~6 TCP connections per host (the HTTP 1.1 specification limits the pool to 2 connections\cite{rfc2616} per host, but modern browsers has refused to conform to this standard in order to decrease the load times).
+The HTTP/1.X protocol does not allow data to be multiplexed over the same connection\cite[p.194]{HPBN}. For this reason, most browser vendors has introduced a connection pool of six TCP connections per host (the HTTP/1.1 specification limits the pool to two connections\cite{rfc2616} per host, but modern browsers have refused to conform to this standard in order to decrease the load times).
 
-A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to avoid this limit. If the subdomains \{shard1, shard2, \ldots\}.example.com where created and pointed to the same server, more than six TCP connections can be used in parallel at the same time from that machine. This approach is not without downsides as every new host requires a new DNS lookup, a TCP three-Way handshake and a slow start from TCP which can have negative impact on the load times\cite[page 199]{HPBN} - just the DNS lookup typically takes 20-120 ms\cite[page 63]{HPWS}. Another problem with domain sharding is that the browser always opens six connections per shard even if not all of them are used. In addition, domain sharding can be a complicated manual process and it is hard to calculate how many shards to use for optimal performance. When Yahoo investigated this problem they reached to conclusion that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
+A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to get around this limit. If the subdomains \{shard1, shard2, \ldots\}.example.com were created and they all pointed to the same server, then more than six TCP connections can be used in parallel at the same time to the same server from a browser. 
 
-As an example, we can benchmark downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails, encoded in base-64 format, and the connection we are using has a lot of bandwidth but suffers from high latency.
+This approach is not without downsides as every new hostname requires a new DNS lookup, a TCP three-Way handshake and a TCP slow start which can have a negative impact on the load times\cite[page 199]{HPBN} --- just the DNS lookup typically takes 20-120 ms\cite[page 63]{HPWS}. Another problem with domain sharding is the fact that the browser always opens six connections per shard even if not all, or none of them are used. In addition, domain sharding can be a complicated manual process to set-up and it is hard to determine how many shards to use for optimal performance. When Yahoo investigated this problem they concluded that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
 
-If all images were downloaded by using a single HTTP request per thumbnail, we can see that the six TCP connection limit will become a bottleneck.
+As an example, we can benchmark the impact of the connection pool limit when downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails, each encoded in base-64 format. The connection we are using in this example has a lot of bandwidth but suffers from high latency.
+
+If all images were retrieved using one HTTP request per thumbnail, we can see in Figure~\ref{fig:tcp_bottleneck} that the six TCP connection limit will become a bottleneck.
 
 \begin{figure}[H]
   \centering
@@ -226,41 +234,48 @@ If all images were downloaded by using a single HTTP request per thumbnail, we c
       \includegraphics[width=0.9\textwidth]{images/chrome_latency_limit.png}
     \end{center}
   \caption{Chrome developer tools showing how the six TCP connection limit becomes a bottle neck on a connection with ~300 ms of latency.}
+  \label{fig:tcp_bottleneck}
 \end{figure}
 
-We can calculate the total delay caused by latency in our example by this formula:
+We can calculate the total delay caused by latency in our example by with the following formula:
 
 \begin{equation}
 \mbox{total latency} = \mbox{number of thumbnails} * \frac{\mbox{latency per request}}{\mbox{number of parallel requests}}
 \end{equation}
 
-In our example, we fetch 60 thumbnails and with a latency of ~300 ms per request. Our browser can handle six parallel TCP connections which gives us the following result:
+In our example, we fetch 60 thumbnails on a connection which has a latency of ~300 ms to the server. Our browser (Google Chrome) can handle six parallel TCP connections which gives us the following result:
 
 \begin{equation}
-\mbox{total latency} = 60 * \frac{300}{6} = 3,000 \mbox{ ms}
+\mbox{total latency} = 60 * \frac{300}{6} = 3,000 \mbox{ms} = 3 \mbox{seconds}
 \end{equation}
 
-If we instead could concatenate these 60 thumbnail requests into one request and the response would contain all of the thumbnails - then we would only have to pay the latency cost once which would reduce the total latency by an order of magnitude from 3,000 ms to 300 ms.
+If we instead could concatenate these 60 thumbnail-requests into one request, and the response instead would contain all of the thumbnails --- then we would only have to pay the latency cost once. This would reduce the total latency by an order of magnitude, from 3,000 ms to 300 ms, since we only have to pay the price for the latency once.
 
-It is worth pointing out that increasing the bandwidth would not resolve this problem as the latency is the only bottleneck in this scenario. It is not uncommon for browsers to wait idle for 100 - 150 ms before spending 5 ms to download an image which means that latency is accounting for 90-95\% of the total time for the HTTP requests\cite{latency}.
+It is worth pointing out that increasing the bandwidth of the connection would not resolve this problem as the latency is the only bottleneck in this example.
+
+It is not uncommon for browsers to wait idle for 100 - 150 ms before spending 5 ms to download an image. This means that latency is often accounting for 90-95\% of the total waiting time for the HTTP requests\cite{latency}.
 
 \subsection{Chunked responses}
-When fetching thumbnails, you often want to display them as soon as each individual image has been loaded and not wait for the entire concatenated response. When using a concatenated request to fetch multiple resources at the same time, the server can use chunked transfer encoding in the HTTP response to send the thumbnail data in chunks\cite{chunked}. By doing so, images can be loaded as soon as they are available in the client, even if loaded out of order\cite{dropbox_chunked}.
+In the previous example where we fetched thumbnails, we often want to display them as soon as each individual image has been loaded and not wait for the entire concatenated response. 
+
+When using a concatenated request to fetch multiple resources at the same time, the server can use chunked transfer encoding in the HTTP response to send the individual thumbnail data in chunks\cite{chunked}. By doing so, images, or any other data, can be displayed on the client as soon as each chunk is available, even out of order if necessary. 
+
+This approach, with concatenated requests and a chunked response, has been successfully been implemented at Dropbox on their gallery software implementation\cite{dropbox_chunked}.
 
 \section{Compression}
 \label{compression}
 
-All requested data should be compressed before it is sent to the client. A common compression algorithm used in HTTP requests is Gzip (GNU Zip) which works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[page 237]{HPBN}.
+All requested uncompressed data, such as text, can be compressed before it is sent to the client to reduce the transfered data size. A common compression algorithm used in HTTP requests is GNU Zip (Gzip) and works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[page 237]{HPBN}.
 
 It is worth mentioning that there are scenarios where Gzip compression applied to very small files can increase the total size because of the Gzip dictionary overhead. This problem can be mitigated by defining a minimum file size threshold\cite{google_gzip}.
 
-As an example, arbitrary user data for 50 users was created and stored in JSON format. When this data was requested from the server without compression, the total content-length of the HTTP request payload amounted to 55,205 bytes. When applying Gzip compression to the same data, the content length was reduced to 16,563, which amounts to a space saving of 70\%. 
+As an example, arbitrary user data for 50 users was created and stored in JSON format. When this data was requested from a server without compression, the total content-length of the HTTP request payload amounted to 55,205 bytes of data. By applying Gzip compression to the same data, the content length was reduced to 16,563 bytes of data which amounts to a 70\% space saving. 
 
 \begin{equation}
 \mbox{Space Saving} = 1 - \frac{\mbox{Compressed Size}}{\mbox{Uncompressed Size}} = 1 - \frac{16,563}{55,205} = 70\%
 \end{equation}
 
-An important thing to note about Gzip compression is that only the payload is compressed in HTTP 1.1\cite{header_compression}. This means that the headers including cookies are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in HTTP/2\cite[page 222]{HPBN}.
+An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
 
 \chapter{API Gateways in theory}
 When developing clients for a back-end API, you often find that the clients need and the APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ. Not being able to optimise the API for each clients need can hurt the clients performance which has to do a lot of extra work but can also strain the developer whom may have to do extra work to fit the API for every client. One approach to solve this problem is by utilising an API gateway.
@@ -747,7 +762,7 @@ By placing a API-gateway written with Crocodile Pear in between the Streamflow w
 
 In the test environment, measurements where made on a list which had 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API-gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
 
-The Streamflow API also doesn't compress the responses. By adding a gzip compression in the API-gateway before responding to the client, the data could be reduced even more, from 1,100 KB to 9.9 KB, which amouts to a 99\% decrease of transmitted data!
+The Streamflow API also doesn't compress the responses. By adding a gzip compression in the API-gateway before responding to the client, the data could be reduced even more, from 1,100 KB to 9.9 KB, which amounts to a 99\% decrease of transmitted data!
 
 In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field "dueOn" was truncated from "2015-02-17T23:59:59.000Z" to "2015-02-17". Using the API-gateway, these transformations could be taken care of before replying to the client. This means that no potentially demanding transformations had to be done on the client and instead the data could be used directly on response.
 
