@@ -802,6 +802,42 @@ In the production environment, a measurement was made to determine the number of
 
 It should be noted that the final version of the web-client will most likely be limited to displaying 10 - 20 cases at a time using pagination. This would reduce the number of requests to 20 - 60 for any given inbox view. This is however still a substantial amount of HTTP requests to perform every time a user checks an inbox. This approach will neither address the problem that 86\% of the transferred data is unnecessary overhead.
 
+\newpage
+\section{Bank App}
+The second system CrocodilePear was test on was a bank app for an undisclosed major bank in Sweden. The Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting in the evaluation was that it already had a good API from the start with a design that suited the clients needs.
+
+\subsection{Transaction overview}
+An essential part of the application is the transaction overview which is where the users can look at their balance, orders, fund orders, trades and transactions.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/bank_overview.png}
+    \end{center}
+  \caption{How the data is collected in different functions when the overview is loaded.}
+\end{figure}
+
+When the overview screen is loaded, the client uses promises (asynchronous computations) to collect and transform the results from different end-points. The results are then bound to different variables which will be displayed in the view.
+
+To load the required data, the initial account information is fetched first. Using that response, the client can then load the account information, orders, fund orders and trades. The client then waits for the four requests to respond and then performs some transformations and then extracts information about capital and transactions from it.
+
+\subsection{Results}
+All in all, the client requests data from five different API end-points and uses seven functions to fetch and transform these results. There were no latency issues and since the number of API-endpoints were less than the TCP-connection limit, no significant gain for concatenating requests were present.
+
+The code in the client to perform these requests and transform the results amounted to roughly 100 lines and the resulting end-point in the API-gateway amounted to roughly the same amount of lines.
+
+The data served from the API had no information which the client discarded and so the data transfer before and after the introduction of the gateway was almost identical --- about 1 KB difference. 
+
+It is possible that the unnecessary overhead can differ from customer to customer since the API sends all of the customer's accounts, including inactive accounts, but the client is only interesting in the active accounts. It is however hard to motivate the inclusion of an API-gateway because of this scenario since the number of inactive accounts for a general user is zero or very low.
+
+One thing that made the Bank App special is that the different mobile platforms shared a common code base for the overview screen. This meant that iOS, Android and Windows Phone could utilise the same JavaScript code for transforming, filtering and sorting the requested data.
+
+If the Bank App instead was developed by using native code, we would see that this transforming code had to be repeatedly rewritten for each platform in a new language. The industry average defect rate is about 1 - 25 errors per 1000 lines of code\cite{code_complete}. This means that every new platform which was introduced to the overview would potentially create 0.1 - 2.5 new bugs --- a number which could be reduced if the code only had to be written once in the API gateway.
+
+Perhaps more importantly, moving the code to the API gateway means that the combined codebase would not just be less error prone but more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API-gateway and avoid updating the clients. If this code was located in the clients, all of them had to be updated individually, probably by different teams, and submitted to the various app stores for a potentially long review process.
+
+That said, the Bank App did have a cross-platform shared code base, well suited end-points and optimised network traffic which all goes to show that in some cases the inclusion of a API-gateway can not be motivated. In this case, the API-gateway would add to the architectural complexity without improving the performance or the code base.
+
 \cleardoublepage
 \phantomsection
 \addcontentsline{toc}{chapter}{Bibliography}
