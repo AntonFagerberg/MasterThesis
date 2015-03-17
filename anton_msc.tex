@@ -765,6 +765,7 @@ Streamflow has an HATEOAS API with JSON-encoded responses. The desktop client fo
 \subsection{Case lists}
 In Streamflow, incoming cases are categorised automatically by the rules implemented for the municipality or organisation. Each category has two folders: "inbox" and "my cases". When clicking "inbox" or "my cases" for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
 
+\subsection{Evaluation}
 When requesting the case list, several recursive requests will be executed from the client in order to collect all required information and follow the HATEOAS specification (the first steps in the request chain has been omitted):
 
 \begin{enumerate}
@@ -804,39 +805,43 @@ It should be noted that the final version of the web-client will most likely be 
 
 \newpage
 \section{Bank App}
-The second system CrocodilePear was test on was a bank app for an undisclosed major bank in Sweden. The Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting in the evaluation was that it already had a good API from the start with a design that suited the clients needs.
+The second system CrocodilePear was test on was a bank app for an undisclosed major bank in Sweden, here after just called \textit{Bank App}. The Bank App is a mobile app which has clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API-gateway point of view, was that it already had a good API from the start with a design that suited the clients needs. Further on, the clients where written as a hybrid app where common web technologies could be shared among the different platforms with a small amount of native components.
 
 \subsection{Transaction overview}
 An essential part of the application is the transaction overview which is where the users can look at their balance, orders, fund orders, trades and transactions.
+
+When the transaction overview screen is loaded, the client uses promises (asynchronous computations) to collect and transform the results from the different API end-points. The results are then bound to the scope variable which will make sure that the information is rendered in the view.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/bank_overview.png}
     \end{center}
-  \caption{How the data is collected in different functions when the overview is loaded.}
+  \caption{How the asynchronous calls to the API and transformation works. There are two places where the code waits for previous computations.}
 \end{figure}
 
-When the overview screen is loaded, the client uses promises (asynchronous computations) to collect and transform the results from different end-points. The results are then bound to different variables which will be displayed in the view.
+To load the required data, the initial account information has to be fetched first. Using that response, the client will then load the account information, orders, fund orders and trades for that account. The client then waits for the four requests to respond, perform some transformations to the data and then merge the it with capital and transactions data so that the fetched information fits the clients data model.
 
-To load the required data, the initial account information is fetched first. Using that response, the client can then load the account information, orders, fund orders and trades. The client then waits for the four requests to respond and then performs some transformations and then extracts information about capital and transactions from it.
+\subsection{Evaluation}
+All in all, the client requests data from five different API end-points and uses about twice as many functions to fetch and transform these results. Since the requests are less than six in the transaction overview, it will have no problem with the TCP-connection limit.
 
-\subsection{Results}
-All in all, the client requests data from five different API end-points and uses seven functions to fetch and transform these results. There were no latency issues and since the number of API-endpoints were less than the TCP-connection limit, no significant gain for concatenating requests were present.
+The data served from the API only had a small amount of information which the client discarded and so the data transfer before and after the introduction of the gateway was almost identical --- about 1 KB less after the introduction of the API-gateway.
 
-The code in the client to perform these requests and transform the results amounted to roughly 100 lines and the resulting end-point in the API-gateway amounted to roughly the same amount of lines.
-
-The data served from the API had no information which the client discarded and so the data transfer before and after the introduction of the gateway was almost identical --- about 1 KB difference. 
-
-It is possible that the unnecessary overhead can differ from customer to customer since the API sends all of the customer's accounts, including inactive accounts, but the client is only interesting in the active accounts. It is however hard to motivate the inclusion of an API-gateway because of this scenario since the number of inactive accounts for a general user is zero or very low.
+It is possible that the overhead of unnecessary data can differ from customer to customer. One example of this is the fact that the API sends all of the customer's accounts, including inactive accounts, but the client is only interesting in the active accounts. It is however hard to argue that this amount of overhead is so substantial that it will cause performance issues.
 
 One thing that made the Bank App special is that the different mobile platforms shared a common code base for the overview screen. This meant that iOS, Android and Windows Phone could utilise the same JavaScript code for transforming, filtering and sorting the requested data.
 
-If the Bank App instead was developed by using native code, we would see that this transforming code had to be repeatedly rewritten for each platform in a new language. The industry average defect rate is about 1 - 25 errors per 1000 lines of code\cite{code_complete}. This means that every new platform which was introduced to the overview would potentially create 0.1 - 2.5 new bugs --- a number which could be reduced if the code only had to be written once in the API gateway.
+If the Bank App instead was developed by using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1 - 25 errors per 1000 lines of code\cite{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1 - 2.5 new bugs --- a number which could be reduced if the code only had to be written once in the API gateway instead.
 
-Perhaps more importantly, moving the code to the API gateway means that the combined codebase would not just be less error prone but more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API-gateway and avoid updating the clients. If this code was located in the clients, all of them had to be updated individually, probably by different teams, and submitted to the various app stores for a potentially long review process.
+Perhaps more importantly, by moving the code to the API gateway means that the combined codebase would not just be less error prone but also more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API-gateway and avoid updating every client. 
 
-That said, the Bank App did have a cross-platform shared code base, well suited end-points and optimised network traffic which all goes to show that in some cases the inclusion of a API-gateway can not be motivated. In this case, the API-gateway would add to the architectural complexity without improving the performance or the code base.
+If this code instead was located in the clients, all of them had to be updated individually, probably by different teams, and submitted to the various app stores for a potentially long review process.
+
+Having different code bases for common tasks in the clients would also increase the risk of introducing discrepancies by mistake despite the goal of having identically working clients on all platforms.
+
+In the end, the code in the client to perform these requests and transform the results amounted to roughly 100 lines of code and the corresponding end-point in the API-gateway amounted to roughly the same amount of lines.
+
+It is hard to argue for the inclusion of an API-gateway in the current state of this project because of the facts that the Bank App did already have a cross-platform shared code base and well suited end-points. In this case, the API-gateway would most likely serve as an unnecessary layer of complexity where the benefits wouldn't outweigh the drawbacks.
 
 \cleardoublepage
 \phantomsection
