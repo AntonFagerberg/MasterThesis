@@ -423,6 +423,15 @@ The problem with double latency can however arise and be unavoidable if the API-
   \caption{How latency affect the different placement strategies for the API-gateway.}
 \end{figure}
 
+\section{Error handling}
+An API-gateway should be able to handle potential errors with different strategies. In the simple scenarios where a single request is proxied and potentially transformed, the API-gateway can chose to either resubmit the failing request to the back-end API, a number of times potentially after a small delay, or simply relay the error to the client.
+
+It gets harder to decide what to do in cases where several requests are concatenated or transformed together in some way. The developer of the API-gateway's end-point has to decide if a partial result is relevant for the client or if one failure should invalidate the entire result set.
+
+Deciding to invalidate the entire result based on one request failure is problematic if the API-gateway want to used chunked responses. Ideally, the API-gateway want to transmit data to the client as soon as it is available but since chunks can't be retracted, the API-gateway either has to wait for all back-end results to arrive before responding or introduce some kind of an error chunk which tells the client to discard the previously sent data.
+
+The API-gateway developer always have to make the decision whether to handle much of the error complexity in the API-gateway itself or move this responsibility to the client.
+
 \section{Security - authentication \& authorisation}
 \label{sec:security}
 API-gateway security is, like all security scenarios, a complex issue. All but the simplest cases should be solved outside the implementation of the gateway itself. What makes an API-gateway complex from a security point of view is the fact that one end-point provided from the API-gateway can communicate with several back-end systems, all of which can utilise different authentication and authorisation protocols. Because of this, a single sign-on service provided outside the API-gateway itself is a good approach for the more complex API-gateways which integrate with several back-end systems.
