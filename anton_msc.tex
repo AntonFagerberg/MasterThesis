@@ -48,31 +48,36 @@
 	{\normalsize \href{mailto:ada10afa@student.lu.se}{\texttt{ada10afa@student.lu.se}}}
 }
 
-\title{Work in progress title}
-\subtitle{A {\LaTeX} class}
-\company{Jayway}
-\supervisor{Roger Henriksson, \href{mailto:Roger.Henriksson@cs.lth.se}{\texttt{Roger.Henriksson@cs.lth.se}}}
+\title{Optimising client/server communication with an API-gateway}
+\subtitle{}
+\company{Jayway AB}
+
+\supervisors{Roger Henriksson, \href{mailto:Roger.Henriksson@cs.lth.se}{\texttt{Roger.Henriksson@cs.lth.se}}}{Nils-Olof Bankell, \href{mailto:Nils-Olof.Bankell@jayway.com}{\texttt{Nils-Olof.Bankell@jayway.com}}}
+
 \examiner{Görel Hedin, \href{mailto:Gorel.Hedin@cs.lth.se}{\texttt{Gorel.Hedin@cs.lth.se}}}
 
 \date{\today}
 %\date{February 18, 2014}
 
 \acknowledgements{
-If you want to thank people, do it here, on a separate right-hand page. Both the U.S. \textit{acknowledgments} and the British \textit{acknowledgements} spellings are acceptable.
+I would like to thank Jayway AB for giving me the resources to explore this topic and the freedom to do it in any way I wanted. A big thank you to my supervisors Nils-Olof Bankell at Jayway and Roger Henriksson at Lund University for all their help during this process. Thank you Görel Hedin for being the examiner on this master thesis.
 
-We would like to thank Lennart Andersson for his feedback on this template.
+\vspace{5mm}
+
+\noindent Thank you X, Y \& Z for proof reading this thesis and providing many helpful pointers. A big thanks to the developers of Elixir and the tools around it, especially Plug, which made the prototype a pleasure to work with.
+
+\vspace{5mm}
+
+\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing thesis. Nils was a great teacher and he was the one who introduced me to computers at a young age which made all of this possible.
 }
 
 \theabstract{
-This document describes the Master's Thesis format for the theses carried out at 
-the Department of Computer Science, Lund University. 
+This thesis investigates the benefits and complications of working with API-gateways in order to optimise the communication between clients and servers. We do this by examining the underlying protocol, HTTP, and the general theory regarding API-gateways.
 
-Your abstract should capture, in English, the whole thesis with focus on the problem and solution in 150 words. It should be placed on a separate right-hand page, with an additional \textit{1cm} margin on both left and right. Avoid acronyms, footnotes, and references in the abstract if possible.
-
-Leave a \textit{2cm} vertical space after the abstract and provide a few keywords relevant for your report. Use five to six words, of which at most two should be from the title.
+An API-gateway framework was developed to help understand some of the common problems and provide a way to rapidly develop solutions to them. This framework was then applied in case studies in order to find problem areas, and solve, them in real production systems from the industry.
 }
 
-\keywords{MSc, template, report, style, structure}
+\keywords{API, gateway, proxy, communication, performance, HTTP, Elixir}
 
 %% Only used to display font sizes
 \makeatletter
@@ -277,6 +282,23 @@ As an example, arbitrary user data for 50 users was created and stored in JSON f
 
 An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
 
+\section{Related works}
+High Performance Browser Networking - What every web developer should know about networking and web performance
+
+Ilya Grigorik, 2013, O'Reilly Media
+
+\vspace{5mm}
+\noindent High Performance Web Sites - Essential Knowledge for Front-End Engineers
+
+Ilya Grigorik, 2007, O'Reilly Media.
+
+\vspace{5mm}
+\noindent Nine Things to Expect from HTTP/2
+
+Mark Nottingham, 2014, mnot's blog
+
+\url{https://www.mnot.net/blog/2014/01/30/http2_expectations}
+
 \chapter{API Gateways in theory}
 When developing clients for a back-end API, you often find that the clients needs and the back-end APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ based on what kind of product is being developed.
 
@@ -461,6 +483,18 @@ An API-gateway can easily collect analytics from HTTP data such as:
 \end{itemize}
 
 Since performance is a top priority in API-gateways, the collected data should preferably be delegated to and stored and processed using a third-party analytics engine.
+
+\section{Related works}
+Optimizing the Netflix API
+
+Ben Christensen, 2013, The Netflix Tech Blog
+
+\url{http://techblog.netflix.com/2013/01/optimizing-netflix-api.html}
+
+\vspace{5mm}
+\noindent Tyk - An open source, lightweight, fast and scalable API Gateway
+
+\url{https://tyk.io/}
 
 \chapter{CrocodilePear: API-gateway framework}
 
@@ -691,7 +725,7 @@ On line 2 - 4, we intercept cities and country codes, such as "Lund,SE|Copenhage
 
 On line 6 - 13, we create a new transformer lambda function. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data types using the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again - the rest of the payload data is discarded. The other response data: status, headers and meta, will be left intact since our function only updates the data stored within they key :body.
 
-On line 15 - 19, we tie everything together using the pipeline. We take the URIs, pipe them into a request, pipe the request in to a transformer with our new function $temperature_extractor$, pipe that in to the concatenate\_json function and pipe that to the response.
+On line 15 - 19, we tie everything together using the pipeline. We take the URIs, pipe them into a request, pipe the request in to a transformer with our new function temperature\_extractor, pipe that in to the concatenate\_json function and pipe that to the response.
 
 In this example, we have used request/response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
 
@@ -851,6 +885,8 @@ Having different code bases for common tasks in the clients would also increase 
 In the end, the code in the client to perform these requests and transform the results amounted to roughly 100 lines of code and the corresponding end-point in the API-gateway amounted to roughly the same amount of lines.
 
 It is hard to argue for the inclusion of an API-gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API-gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API-gateway will not provide any substantial gain.
+
+\chapter{Conclusions}
 
 \cleardoublepage
 \phantomsection
