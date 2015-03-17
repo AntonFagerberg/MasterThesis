@@ -841,7 +841,7 @@ Having different code bases for common tasks in the clients would also increase 
 
 In the end, the code in the client to perform these requests and transform the results amounted to roughly 100 lines of code and the corresponding end-point in the API-gateway amounted to roughly the same amount of lines.
 
-It is hard to argue for the inclusion of an API-gateway in the current state of this project because of the facts that the Bank App did already have a cross-platform shared code base and well suited end-points. In this case, the API-gateway would most likely serve as an unnecessary layer of complexity where the benefits wouldn't outweigh the drawbacks.
+It is hard to argue for the inclusion of an API-gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API-gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API-gateway will not provide any substantial gain.
 
 \cleardoublepage
 \phantomsection
