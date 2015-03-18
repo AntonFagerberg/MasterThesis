@@ -15,7 +15,7 @@
 
 \lstset{ %
 %  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
-  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
   breaklines=true,                 % sets automatic line breaking
   captionpos=b,                    % sets the caption-position to bottom
@@ -68,7 +68,7 @@ I would like to thank Jayway AB for giving me the resources to explore this topi
 
 \vspace{5mm}
 
-\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing thesis. Nils was a great teacher and he was the one who introduced me to computers at a young age which made all of this possible.
+\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing this thesis. Nils was a great teacher and the one who introduced me to computers at a young age which made all of this possible.
 }
 
 \theabstract{
@@ -88,6 +88,23 @@ An API-gateway framework was developed to help understand some of the common pro
 
 \begin{document}
 \makefrontmatter
+
+\chapter{Introduction}
+This thesis started with the assumption that the traffic between back-end server APIs and clients was not properly optimised --- especially in mobile clients. The reason behind this was thought to be a mismatch between the client expectations and the defined server responses. If, for example, a back-end API was developed with a desktop client in mind and a mobile client was added later on, then the traffic to the mobile client would not be properly adapted if the server was not rewritten.
+
+In the world of software, and especially in the enterprise area, there are many reasons why the back-end server itself cannot be rewritten. This can be because of cost factors, risk of breaking existing clients, ownership issues or even lack of knowledge. Because of this, we wanted to investigate whether the introduction of a new software layer between the client and server could mitigate this issue.
+
+\section{Method}
+
+This new software layer between the client and server corresponded to the concept of an API-gateway. This thesis consists of four parts which builds upon each other. 
+
+First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems appear when the server and client does not communicate efficiently.
+
+Secondly, we theorise around the broad concept of API-gateways. Here we try to define different ways how the API-gateway can improve the relationship between clients and servers, and how the problems defined in the previous section can be solve.
+
+Thirdly, an API-gateway framework was written to gain a better understanding of the problem from a practical and technical point of view. This framework allowed us to deeper understand and benchmark the problems defined in earlier chapters and provide real solutions.
+
+Finally, we did a case study on real-world production systems. This consisted of an analysis to determine whether the systems had issues which could be resolved with an API-gateway. A solution was then created for that system in the previously written framework. This was done in order to verify that the framework could be used in real-world scenarios but also to be able to benchmark the results both before and after the introduction of it.
 
 \chapter{Performance issues with HTTP 1.1}
 Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP/2.0), is expected to be finalised in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the protocol used on all web servers and middle-boxes such as proxies and firewalls --- and even longer for many legacy systems and clients used in the enterprise environments. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1, even many years after the release of HTTP/2.
@@ -663,9 +680,6 @@ Each item in the list will be a JSON-object containing the four keys: status, he
 \end{figure}
 
 Even though $concatenate\_json$ takes an arbitrary number of producer PIDs as its argument, it will itself only return one new producer as its result is one JSON list object.
-
-\subsection{Creating end-points}
-todo...
 
 \section{Examples}
 \subsection{Request proxying}
