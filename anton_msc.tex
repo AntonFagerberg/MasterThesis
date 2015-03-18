@@ -499,6 +499,8 @@ Jeevak Kasarkod, 2013, InfoQ
 
 \chapter{CrocodilePear: API-gateway framework}
 
+The prototype framework CrocodilePear was developed in order to understand and being able to rapidly develop custom API-gateways. Existing API-gateways mainly focus on expanding APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service). CrocodilePear's focus is on the other hand from a pure technical point of view with the goal to help developers create their own customised API-gateways programatically with a high degree of freedom and a small amount of abstractions.
+
 \section{Language \& Libraries}
 \subsection{Elixir}
 Elixir is a functional language designed for building scalable and maintainable applications on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. Properties all of which are important for a successful API-gateway implementation.
@@ -802,12 +804,12 @@ end
 \section{Related works}
 Tyk - An open source, lightweight, fast and scalable API Gateway
 
-\url{https://tyk.io/}
+\noindent \url{https://tyk.io/}
 
 \vspace{5mm}
 \noindent LoopBack API Gateway
 
-\url{http://docs.strongloop.com/display/public/LB/LoopBack+API+Gateway}
+\noindent \url{http://docs.strongloop.com/display/public/LB/LoopBack+API+Gateway}
 
 
 \chapter{Cases studies}
@@ -898,6 +900,19 @@ In the end, the code in the client to perform these requests and transform the r
 It is hard to argue for the inclusion of an API-gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API-gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API-gateway will not provide any substantial gain.
 
 \chapter{Conclusions}
+As seen in the case studies, the API-gateway concept is not a silver bullet and the need for an API-gateway varies on a number of factors.
+
+HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering of high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years --- the need to change will not only be demanding for the browser- and server-developers but all intermediate devices such as proxies need to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by HTTPS\cite{http2_ssl}. This further highlights the need for an optimising API-gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance for the communications between the clients and back-ends.
+
+From the case studies we have seen that API-gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively deceloped anymore. In such scenarios, API-gateways can move the burden away from the client and place it closer to the back-end where network costs are negligible. However, the API-gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API-gateway can make the client development easier and less error prone.
+
+API-gateways can also be helpful when designing new systems which has to support a variety av clients. As seen with Netflix\cite{netflix}, which supports many different clients with different needs, the client team can be responsible for developing their own API-gateway end-points which serves their client a custom tailor-made response. This puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and increases performance.
+
+\section{Future work}
+
+The API-gateway concept is very broad and there are many unexplored areas which the concept can be translated to. Many topics in this thesis which are only briefly touched upon, such security and caching, deserve an entire thesis of their own to be fully explored.
+
+The prototype framework developed in this thesis used Elixir but there is no doubt that the same functionality could be translated to other programming languages. By migrating the framework to other languages, new challenges and solutions would doubtless appear and shine new light on the topic. 
 
 \cleardoublepage
 \phantomsection
@@ -921,6 +936,9 @@ HATEOAS, Hypermedia as the Engine of Application State, is a constraint to the R
 
 \section{DMZ}
 DMZ, DeMilitarised  Zone, is an isolated subnet located outside the protected LAN where workstations and internal back-end systems are located. It is common that machines which have to be directly exposed from the internet are placed inside the DMZ.
+
+\section{Proxy}
+A proxy server acts as the intermediary between clients and servers by relaying the data between them.
 
 \end{appendices}
 
