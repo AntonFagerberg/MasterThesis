@@ -77,7 +77,7 @@ This thesis investigates the benefits and complications of working with API-gate
 An API-gateway framework was developed to help understand some of the common problems and provide a way to rapidly develop solutions to them. This framework was then applied in case studies in order to find problem areas, and solve, them in real production systems from the industry.
 }
 
-\keywords{API, gateway, proxy, communication, performance, HTTP, Elixir}
+\keywords{API, gateway, proxy, communication, optimisation, performance, HTTP}
 
 %% Only used to display font sizes
 \makeatletter
@@ -96,17 +96,21 @@ In the world of software, and especially in the enterprise area, there are many 
 
 \section{Method}
 
-This new software layer between the client and server corresponded to the concept of an API-gateway. This thesis consists of four parts which builds upon each other. 
+This new software layer between the client and server corresponded to the concept of an API-gateway. We designed this thesis to consist of four parts which all builds upon each other. 
 
-First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems appear when the server and client does not communicate efficiently.
+\subsection{Performance issues with HTTP/1.1}
+First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems appears when the server and client does not communicate efficiently. We look at the weaknesses in this protocol and how they can have been solved over the years in the industry.
 
-Secondly, we theorise around the broad concept of API-gateways. Here we try to define different ways how the API-gateway can improve the relationship between clients and servers, and how the problems defined in the previous section can be solve.
+\subsection{API-gateways in theory}
+Secondly, we theorise around the broad concept of API-gateways. Here we try to define the different ways the API-gateway can improve the relationship between clients and servers, and how the problems defined in the previous HTTP chapter can be solve.
 
-Thirdly, an API-gateway framework was written to gain a better understanding of the problem from a practical and technical point of view. This framework allowed us to deeper understand and benchmark the problems defined in earlier chapters and provide real solutions.
+\subsection{API-gateway framework}
+Thirdly, an API-gateway framework was written to gain a better understanding of the problem from a practical and technical point of view. This framework allows us to deeper understand and benchmark the problems defined in earlier chapters and provide real applicable solutions to them.
 
-Finally, we did a case study on real-world production systems. This consisted of an analysis to determine whether the systems had issues which could be resolved with an API-gateway. A solution was then created for that system in the previously written framework. This was done in order to verify that the framework could be used in real-world scenarios but also to be able to benchmark the results both before and after the introduction of it.
+\subsection{Case studies}
+Finally, we did a case study on real-world production systems. This consisted of an analysis to determine whether the systems had issues which could be resolved with the introduction of an API-gateway. A solution was then created for that system with the framework from the previous chapter. This was done in order to verify that not only could the framework be used in real-world scenarios but also to be able to benchmark the results before and after the introduction of it. By doing so, we can determine in which scenarios it is practical to implement an API-gateway and how
 
-\chapter{Performance issues with HTTP 1.1}
+\chapter{Performance issues with HTTP/1.1}
 Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP/2.0), is expected to be finalised in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the protocol used on all web servers and middle-boxes such as proxies and firewalls --- and even longer for many legacy systems and clients used in the enterprise environments. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1, even many years after the release of HTTP/2.
 
 \section{Headers}
@@ -329,7 +333,7 @@ High Performance Browser Networking - What every web developer should know about
 	A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, where he briefly explores nine tings to expect from HTTP/2.
 \end{quote}
 
-\chapter{API Gateways in theory}
+\chapter{API-gateways in theory}
 When developing clients for a back-end API, you often find that the clients needs and the back-end APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ based on what kind of product is being developed.
 
 Not being able to optimise the API for each clients needs can hurt the clients performance since it has to do a lot of extra work but can also strain the developer whom may have to do extra work to refit the API for the clients.
