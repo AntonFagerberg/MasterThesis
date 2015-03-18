@@ -48,7 +48,7 @@
 	{\normalsize \href{mailto:ada10afa@student.lu.se}{\texttt{ada10afa@student.lu.se}}}
 }
 
-\title{Optimising client/server communication with an API-gateway}
+\title{Optimising clients with API-gateways}
 \subtitle{}
 \company{Jayway AB}
 
@@ -283,21 +283,34 @@ As an example, arbitrary user data for 50 users was created and stored in JSON f
 An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
 
 \section{Related works}
-High Performance Browser Networking - What every web developer should know about networking and web performance
+High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media
 
-Ilya Grigorik, 2013, O'Reilly Media
-
-\vspace{5mm}
-\noindent High Performance Web Sites - Essential Knowledge for Front-End Engineers
-
-Ilya Grigorik, 2007, O'Reilly Media.
+\begin{quote}
+	The essential book which covers all aspects around browser networking and the limitations around the HTTP protocol.
+\end{quote}
 
 \vspace{5mm}
-\noindent Nine Things to Expect from HTTP/2
+\noindent High Performance Web Sites - Essential Knowledge for Front-End Engineers, Ilya Grigorik, 2007, O'Reilly Media.
 
-Mark Nottingham, 2014, mnot's blog
+\begin{quote}
+	How to build high performing web sites with technologies which can be applied inside the API-gateways.
+\end{quote}
 
-\url{https://www.mnot.net/blog/2014/01/30/http2_expectations}
+\vspace{5mm}
+\noindent Even Faster Web Sites - Performance Best Practices for Web Developers, Ilya Grigorik, 2009, O'Reilly Media.
+
+\begin{quote}
+	Follow-up book to High performance Web Sites with additional technologies which can be applied inside the API-gateways.
+\end{quote}
+
+\vspace{5mm}
+\noindent Nine Things to Expect from HTTP/2, Mark Nottingham, 2014, mnot's blog
+
+\noindent \url{https://www.mnot.net/blog/2014/01/30/http2_expectations}
+
+\begin{quote}
+	A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, where he briefly explores nine tings to expect from HTTP/2.
+\end{quote}
 
 \chapter{API Gateways in theory}
 When developing clients for a back-end API, you often find that the clients needs and the back-end APIs functionality isn't a perfect match. Different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ based on what kind of product is being developed.
@@ -485,17 +498,23 @@ An API-gateway can easily collect analytics from HTTP data such as:
 Since performance is a top priority in API-gateways, the collected data should preferably be delegated to and stored and processed using a third-party analytics engine.
 
 \section{Related works}
-Optimizing the Netflix API
+Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
-Ben Christensen, 2013, The Netflix Tech Blog
+\noindent \url{http://techblog.netflix.com/2013/01/optimizing-netflix-api.html}
 
-\url{http://techblog.netflix.com/2013/01/optimizing-netflix-api.html}
+\begin{quote}
+	Netflix has applied a concept similar to API-gateways where each client team develops their own end-points adapted to their own specific need.
+\end{quote}
 
-The Netflix API Optimization Story
+\vspace{5mm}
 
-Jeevak Kasarkod, 2013, InfoQ
+\noindent The Netflix API Optimization Story, Jeevak Kasarkod, 2013, InfoQ
 
-\url{http://www.infoq.com/news/2013/02/netflix-api-optimization}
+\noindent \url{http://www.infoq.com/news/2013/02/netflix-api-optimization}
+
+\begin{quote}
+	Further in-depth interview with Ben Christensen which is the author of the blog post mention above which examines the architecture of Netflix approach.
+\end{quote}
 
 \chapter{CrocodilePear: API-gateway framework}
 
@@ -806,10 +825,18 @@ Tyk - An open source, lightweight, fast and scalable API Gateway
 
 \noindent \url{https://tyk.io/}
 
+\begin{quote}
+	An open source API-gateway written in Go which enables you to control who accesses your API, when they access it and how they access it.
+\end{quote}
+
 \vspace{5mm}
 \noindent LoopBack API Gateway
 
 \noindent \url{http://docs.strongloop.com/display/public/LB/LoopBack+API+Gateway}
+
+\begin{quote}
+	An API-gateway developed by StrongLoop with focus on security, mediation and transformation, infrastructure QoS, monitoring and reporting, aggregation and visualisation. 
+\end{quote}
 
 
 \chapter{Cases studies}
