@@ -12,6 +12,7 @@
 
 \usepackage{float}
 \usepackage{listings}
+\usepackage{csquotes}
 
 \lstset{ %
 %  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
@@ -672,7 +673,7 @@ CrocodilePear include timers which can be placed anywhere in the pipeline to ben
 \subsection{Concatenate JSON}
 The function $concatenate\_json$ takes a list of producers, consumes them and returns a new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data. The order is determined based on which producer starts responding first.
 
-Each item in the list will be a JSON-object containing the four keys: status, headers, meta and body (payload). Optionally, if a "true" value is passed in to the function, each item in the list will be only the "body" (payload) with the headers, meta and status omitted.
+Each item in the list will be a JSON-object containing the four keys: status, headers, meta and body (payload). Optionally, if a "true" value is passed in to the function, each item in the list will be only the \enquote{body} (payload) with the headers, meta and status omitted.
 
 
 \begin{figure}[H]
