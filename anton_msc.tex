@@ -425,6 +425,7 @@ API gateways can be used to compress responses in the cases where no compression
 \end{figure}
 
 \section{Caching}
+\label{caching}
 Responses from frequent API calls can be cached using the API gateway to reduce the load on the back-end system\cite[page 107]{AASG}. The cache can have a specified lifetime or be invalidated based on certain events such as a table update on a database. There are several different caching strategies and third-party systems which the API-gateway can utilise --- this subject is a vast and complex topic in itself and is therefore not explored further in this document.
 
 \begin{figure}[H]
@@ -858,7 +859,7 @@ end
   \caption{Simple authentication example.}
 \end{figure}
 
-\section{Caching}
+\subsection{Caching}
 Response caching can be added to Crocodile Pear. There are two places where caching can be added in the pipeline. Either we can substitute the request-function with a request\_cache-function or we can do a cache outside the pipeline. 
 
 \begin{figure}[H]
@@ -898,7 +899,8 @@ end
 
 The second approach is to add the response to the cache right before it is sent to the client. This means that all the computations and transformations are cached so they don't have to be executed again. The draw-back with this approach is that the entire response is cached as one, meaning that if an end-point does 100 parallel requests where only one request differs, all requests has to be re-added to the cache for every tiny change.
 
-Both these approaches are a bit naive and there are many things which has to be considered before implementing a caching solution in a real world example such as how long responses should be cached and whether the client should be able to invalidate a cached item and so on.  
+Both these approaches are a bit naive and there are many things which has to be considered before implementing a caching solution in a real world example such as how long responses should be cached and whether the client should be able to invalidate a cached item and so on. In addition to this, one can imaging using the cache only when certain back-end requests are down of if a request is failing for any reason. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can't be covered in this thesis.
+
 \section{Related works}
 Tyk - An open source, lightweight, fast and scalable API Gateway
 
