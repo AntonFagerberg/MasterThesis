@@ -69,7 +69,7 @@ I would like to thank Jayway AB for giving me the resources to explore this topi
 
 \vspace{5mm}
 
-\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing this thesis. Nils was a great teacher and the one who introduced me to computers at a young age which made all of this possible.
+%\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing this thesis. Nils was a great teacher and the one who introduced me to computers at a young age which made all of this possible.
 }
 
 \theabstract{
@@ -372,7 +372,7 @@ A client often has to perform many requests simultaneously, either to one or mul
   \caption{An API gateway receives a concatenated request which it distributes to multiple resources, the responses are then concatenated into a single response. The resources can either belong to one or several back-end systems.}
 \end{figure}
 
-When working with HTTP requests, there are multiple penalties for executing many small requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from http headers (page \pageref{headers}).
+When working with HTTP requests, there are multiple penalties for executing many small requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from http headers (page \pageref{headers}). This approach can be seen directly in many modern API-designs such as the Facebook Graph API\cite{facebook_batch_requests} --- but for those APIs which lacks this feature, an API-gateway can effectively mitigate these issue.
 
 \section{Duplicate \& Unnecessary items}
 When requesting data from a back-end API, the response may contain unnecessary data which the client doesn't need. In a similar fashion, if a client performs several similar requests, it is possible that all the responses contains some amount of duplicate data. By using an API gateway, the results from the back-end API can be augmented to remove those items that the individual clients does not need.
@@ -495,6 +495,12 @@ API-gateway security is, like all security scenarios, a complex issue. All but t
 
 Further in-depth discussion around this topic is outside the scope of this document
 
+\section{Conditional back-ends}
+By utilising an API-gateway, several different back-ends can be exposed as one single end-point. If we, for example, wanted to provide an API with weather reports from Sweden and Denmark but we've noticed that two different back-end APIs provide better reports --- one for Denmark and one for Sweden. With an API-gateway, we can translate the incoming API-calls to the format required by the different back-ends and delegate the call based on certain inputs such as from where the API-call is made.
+
+\section{Rate limiting}
+API-gateways can make sure we avoid traffic spikes on back-end services by implementing a rate limit of API-calls. This can usually be done in many different ways\cite{azure_rate_limit} such a global limit, per client or per token. This can also be seen for a business perspective where a certain number of calls are free but a fee has to be paid for subsequent calls.
+
 \section{Old API version support}
 
 It happens that API developers makes changes which breaks backward compatibility when moving on to newer versions. Fields can be added, renamed or removed. In such scenarios, old clients may be forced to update in order to work with these breaking API changes.
@@ -536,6 +542,16 @@ Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
 \begin{quote}
 	Further in-depth interview with Ben Christensen which is the author of the blog post mention above which examines the architecture of Netflix approach.
+\end{quote}
+
+\vspace{5mm}
+
+\noindent Managing API Performance, Apigee
+
+\noindent \url{http://apigee.com/docs/content/managing-api-performance}
+
+\begin{quote}
+	A collection of articles from the API company Apigee. The articles focuses on optimising APIs for performance in many common scenarios.
 \end{quote}
 
 \chapter{CrocodilePear: API-gateway framework}
