@@ -499,7 +499,7 @@ Further in-depth discussion around this topic is outside the scope of this docum
 By utilising an API-gateway, several different back-ends can be exposed as one single end-point. If we, for example, wanted to provide an API with weather reports from Sweden and Denmark but we've noticed that two different back-end APIs provide better reports --- one for Denmark and one for Sweden. With an API-gateway, we can translate the incoming API-calls to the format required by the different back-ends and delegate the call based on certain inputs such as from where the API-call is made.
 
 \section{Rate limiting}
-API-gateways can make sure we avoid traffic spikes on back-end services by implementing a rate limit of API-calls. This can usually be done in many different ways\cite{azure_rate_limit} such a global limit, per client or per token. This can also be seen for a business perspective where a certain number of calls are free but a fee has to be paid for subsequent calls.
+API-gateways can make sure we avoid traffic spikes on back-end services by implementing a rate limit of API-calls. This can usually be done in many different ways as seen in Azure\cite{azure_rate_limit} and Apigee\cite{apigee_rate_limit}. Such ways includes a global rate limit, per client rate limit or a per token rate limit. This can also be seen from a business perspective where a certain number of calls are free but a fee has to be paid for subsequent calls.
 
 \section{Old API version support}
 
@@ -524,6 +524,9 @@ An API-gateway can easily collect analytics from HTTP data such as:
 \end{itemize}
 
 Since performance is a top priority in API-gateways, the collected data should preferably be delegated to and stored and processed using a third-party analytics engine.
+
+\section{Load balancing}
+API-gateways can be used as load balancers to distribute workloads across multiple back-end systems. By implementing different scheduling algorithms by either doing a simple round-robin or doing a custom complex algorithm by taking additional factors into account such as the back-end systems reported load, response time, geolocation etc.
 
 \section{Related works}
 Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
