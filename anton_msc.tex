@@ -1017,6 +1017,9 @@ When it comes to conversion from XML to JSON, and vice versa, there is no standa
 
 In an article from XML.com\cite{xml_json} which was published by O'Riley, a standard conversion algorithm was developed to highlight some of the issues around this topic. One of the examples started with a very simple XML structure defined as:
 
+\begin{figure}[H]
+  \centering
+    \begin{center}
 \begin{lstlisting}[breaklines=true,frame=single]
 <e>
   <a>some</a>
@@ -1024,9 +1027,17 @@ In an article from XML.com\cite{xml_json} which was published by O'Riley, a stan
   <a>content</a>
 </e>
 \end{lstlisting}
+    \end{center}
+  \caption{Simple XMP data structure.}
+\end{figure}
+
+
 
 An algorithm was developed to convert the XML-structure to JSON. When this algorithm was tested, the first naive approach to convert it to JSON would result in the following invalid JSON structure:
 
+\begin{figure}[H]
+  \centering
+    \begin{center}
 \begin{lstlisting}[breaklines=true,frame=single]
 "e": {
   "a": "some",
@@ -1034,15 +1045,24 @@ An algorithm was developed to convert the XML-structure to JSON. When this algor
   "a": "content"
 }
 \end{lstlisting}
+    \end{center}
+  \caption{First attempt at transforming XML to JSON. The result is an invalid JSON data structure.}
+\end{figure}
 
 The problem with this structure is that we can not have \enquote{a} as the key in two places in an associative array --- \enquote{a} has to be unique. If we try to solve this by converting the values for the key \enquote{a} to a list, then we get a syntactical valid JSON structure:
 
+\begin{figure}[H]
+  \centering
+    \begin{center}
 \begin{lstlisting}[breaklines=true,frame=single]
 "e": {
   "a": [ "some", "content" ],
   "b": "textual"
 }
 \end{lstlisting}
+    \end{center}
+  \caption{The second approach to transform XML to JSON. The result is valid JSON but the ordering problem has been introduced.}
+\end{figure}
 
 However, another problem has been introduced with this approach which is that the element order is no longer perserved. If we would iterate over the values in the XML, we would end up with \enquote{some, textual, content} but when we now iterate over our JSON-structure we would end up with \enquote{some, content, textual} which is not the desired result.
 
@@ -1054,16 +1074,70 @@ Based on this, the following conclusions was made by XML.com:
 
 \end{quote}
 
-Note that this is just one approach to some of the problems --- there subtler problems other such as the fact that you can have comments in XML but not in JSON. As there is no 1:1 mapping for XML and JSON, different library developers and corporations are developing their own methods to do this conversion. 
+Note that the algorithm from XML.com is just one approach to solve some of the problem around XML-JSON conversion --- there are many additional issues which makes the conversion very complex. As with many things where there is no 1:1 mapping, different library developers and corporations are developing their own standards to handle the conversion.
 
-A notorious example is JSONx which is IBMs standard format for representing JSON as XML\cite{jsonx}. This format went viral as a bloated enterprise format when a person developed a tool which converted Json to XML with IBMs JsonX and then back to JSON from XML with JsonML\cite{jsonml}. Since these tools all follow their own defined conversion standard, the mapping can not be 1:1 and because of this the output from this recursion will grow with the increasingly added verbose meta-data until the browser crashes.
+To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standard which adds additional data to handle potential corner-cases. When these conversions are performed recursively with each output added to the others input, you would expect that the formats stay the same, instead the data structure will grow indefinitely until the browser crashes.
 
-\section{API over XML}
-In XMLThing, the XML-JSON conversion was handled in two different ways. When requests are executed to the API, the client has a built in service which takes all responses and converted the XML-structure to JSON before passing the data down to the views or controllers. In this way, the client 
+In the end --- the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
 
-\subsection{Saving data}
+\section{Translating XML APIs}
+In XMLThing, the XML-JSON conversion was handled in two different ways --- one way for requests and one for responses.
+
+\subsection{Response}
+
+When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which could then be used as JavaScript objects in the views, often after some transformations. As with previous examples, this adds additional complexity to the client which has to transform the responses before they can be properly handled by the client.
+
+\subsection{Request}
+What is more interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT and DELETE which indicates how the resource should be manipulated. Secondly, we have an end-point which is we communicate with over a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
+
+In the case of XMLThing, we can look at the simplest scenario which is saving a note. To do this, the client has to send the following XML-data to the back-end:
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/client_templates.png}
+    \end{center}
+  \caption{Each client has to maintain their own collection of XML-templates in order to make proper requests to the API.}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+\begin{lstlisting}[breaklines=true,frame=single]
+<SaveNotesRequest>
+  <Notes>
+    <JPTEXTt>This is the actual note.</JPTEXT>
+  </Notes>
+</SaveNotesRequest>
+\end{lstlisting}
+    \end{center}
+  \caption{XML-data used for creating a new note.}
+  \label{fig:xml_example}
+\end{figure}
 
 
+This XML data has to be sent with a POST to a specific URL \enquote{/note/create}.
+
+Here we can reason about what the purpose of the XML is. From the URL we can deduce where the information should be sent and what information we are sending --- a note. We can from the HTTP verb POST see that we want to create a new note and in this case, the URL also contains this information since it ends with \enquote{/create}. The only thing missing to complete this action is the actual payload which is the note, in this case \enquote{This is the actual note.}. It is also worth pointing out that the the actual note amounted to roughly 1/3 of the payload and about 2/3 was structural XML data in the example in Figure~\ref{fig:xml_example}.
+
+When working with this API, the XML is entirely redundant from the clients point of view, but for historical reasons the back-end API can not change. This puts an additional strain and layer of complexity in every new client which interacts with the REST API. Not only do the client have to know about the normal interaction methods such as the URL and HTTP verbs but it also needs to have a collection of XML-templates with a different XML-template for every request it wants to execute.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/client_templates.png}
+    \end{center}
+  \caption{Each client has to maintain their own collection of XML-templates in order to make proper requests to the API.}
+\end{figure}
+
+To avoid having to maintain a collection of XML-template in each client, we can introduce an API-gateway to do this job. By introducing an API-gateway, we can expose similar end-points which works without any XML in the client. The API-gateway will maintain the only list of XML-templates which it uses communicate to the back-end.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/gateway_templates.png}
+    \end{center}
+  \caption{The API-gateway maintains a list of XML-templates so the client can communicate to the back-end without them.}
+\end{figure}
 
 \chapter{Conclusions}
 As seen in the case studies, the API-gateway concept is not a silver bullet and the need for an API-gateway varies on a number of factors.
