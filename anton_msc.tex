@@ -426,7 +426,7 @@ API gateways can be used to compress responses in the cases where no compression
 
 \section{Caching}
 \label{caching}
-Responses from frequent API calls can be cached using the API gateway to reduce the load on the back-end system\cite[page 107]{AASG}. The cache can have a specified lifetime or be invalidated based on certain events such as a table update on a database. There are several different caching strategies and third-party systems which the API-gateway can utilise --- this subject is a vast and complex topic in itself and is therefore not explored further in this document.
+Responses from frequent API calls can be cached using the API gateway to reduce the load on the back-end system\cite[page 107]{AASG}. The cache can have a specified lifetime or be invalidated based on certain events such as a table update on a database. There are several different caching strategies and third-party systems which the API-gateway can utilise --- this subject is a vast and complex topic in itself and is therefore not explored further in theory here.
 
 \begin{figure}[H]
   \centering
@@ -860,7 +860,7 @@ end
 \end{figure}
 
 \subsection{Caching}
-Response caching can be added to Crocodile Pear. There are two places where caching can be added in the pipeline. Either we can substitute the request-function with a request\_cache-function or we can do a cache outside the pipeline. 
+Response caching can be added to CrocodilePear. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the request-function with a request\_cache-function or we can do a cache outside the pipeline. 
 
 \begin{figure}[H]
   \centering
@@ -1007,12 +1007,70 @@ In the end, the code in the client to perform these requests and transform the r
 
 It is hard to argue for the inclusion of an API-gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API-gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API-gateway will not provide any substantial gain.
 
+\chapter{XML thing}
+
+XMLThing is a system used for keeping track of X. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP --- but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}, which enables easy (de)serialisation of JavaScript objects to JSON.
+
+\section{Working with XML in JSON clients}
+
+When it comes to conversion from XML to JSON, and vice versa, there is no standard which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
+
+In an article from XML.com\cite{xml_json} which was published by O'Riley, a standard conversion algorithm was developed to highlight some of the issues around this topic. One of the examples started with a very simple XML structure defined as:
+
+\begin{lstlisting}[breaklines=true,frame=single]
+<e>
+  <a>some</a>
+  <b>textual</b>
+  <a>content</a>
+</e>
+\end{lstlisting}
+
+An algorithm was developed to convert the XML-structure to JSON. When this algorithm was tested, the first naive approach to convert it to JSON would result in the following invalid JSON structure:
+
+\begin{lstlisting}[breaklines=true,frame=single]
+"e": {
+  "a": "some",
+  "b": "textual",
+  "a": "content"
+}
+\end{lstlisting}
+
+The problem with this structure is that we can not have \enquote{a} as the key in two places in an associative array --- \enquote{a} has to be unique. If we try to solve this by converting the values for the key \enquote{a} to a list, then we get a syntactical valid JSON structure:
+
+\begin{lstlisting}[breaklines=true,frame=single]
+"e": {
+  "a": [ "some", "content" ],
+  "b": "textual"
+}
+\end{lstlisting}
+
+However, another problem has been introduced with this approach which is that the element order is no longer perserved. If we would iterate over the values in the XML, we would end up with \enquote{some, textual, content} but when we now iterate over our JSON-structure we would end up with \enquote{some, content, textual} which is not the desired result.
+
+Based on this, the following conclusions was made by XML.com:
+
+\begin{quote}
+
+\enquote{A structured XML element can be converted to a reversible JSON structure, if all subelement names occur exactly once, or subelements with identical names are in sequence. A structured XML element can be converted to an irreversible but semantically equivalent JSON structure, if multiple homonymous subelements occur nonsequentially, and element order doesn't matter.} \cite{xml_json}
+
+\end{quote}
+
+Note that this is just one approach to some of the problems --- there subtler problems other such as the fact that you can have comments in XML but not in JSON. As there is no 1:1 mapping for XML and JSON, different library developers and corporations are developing their own methods to do this conversion. 
+
+A notorious example is JSONx which is IBMs standard format for representing JSON as XML\cite{jsonx}. This format went viral as a bloated enterprise format when a person developed a tool which converted Json to XML with IBMs JsonX and then back to JSON from XML with JsonML\cite{jsonml}. Since these tools all follow their own defined conversion standard, the mapping can not be 1:1 and because of this the output from this recursion will grow with the increasingly added verbose meta-data until the browser crashes.
+
+\section{API over XML}
+In XMLThing, the XML-JSON conversion was handled in two different ways. When requests are executed to the API, the client has a built in service which takes all responses and converted the XML-structure to JSON before passing the data down to the views or controllers. In this way, the client 
+
+\subsection{Saving data}
+
+
+
 \chapter{Conclusions}
 As seen in the case studies, the API-gateway concept is not a silver bullet and the need for an API-gateway varies on a number of factors.
 
 HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering of high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years --- the need to change will not only be demanding for the browser- and server-developers but all intermediate devices such as proxies need to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by HTTPS\cite{http2_ssl}. This further highlights the need for an optimising API-gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance for the communications between the clients and back-ends.
 
-From the case studies we have seen that API-gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively deceloped anymore. In such scenarios, API-gateways can move the burden away from the client and place it closer to the back-end where network costs are negligible. However, the API-gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API-gateway can make the client development easier and less error prone.
+From the case studies we have seen that API-gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively developed anymore. In such scenarios, API-gateways can move the burden away from the client and place it closer to the back-end where network costs are negligible. However, the API-gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API-gateway can make the client development easier and less error prone.
 
 API-gateways can also be helpful when designing new systems which has to support a variety av clients. As seen with Netflix\cite{netflix}, which supports many different clients with different needs, the client team can be responsible for developing their own API-gateway end-points which serves their client a custom tailor-made response. This puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and increases performance.
 
