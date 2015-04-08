@@ -36,7 +36,7 @@
   showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
   showstringspaces=false,          % underline spaces within strings only
   showtabs=false,                  % show tabs within strings adding particular underscores
-  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
 %  stringstyle=\color{mymauve},     % string literal style
   tabsize=2,                       % sets default tabsize to 2 spaces
   title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
@@ -61,21 +61,21 @@
 %\date{February 18, 2014}
 
 \acknowledgements{
-I would like to thank Jayway AB for giving me the resources to explore this topic and the freedom to do it in any way I wanted. A big thank you to my supervisors Nils-Olof Bankell at Jayway and Roger Henriksson at Lund University for all their help during this process. Thank you Görel Hedin for being the examiner on this master thesis.
+I would like to thank Jayway AB for giving me the freedom and resources to freely explore this topic. A big thank you to my supervisors Nils-Olof Bankell at Jayway and Roger Henriksson at Lund University for all their help during this process. Thank you Görel Hedin for being the examiner on this master thesis.
 
 \vspace{5mm}
 
-\noindent Thank you X, Y \& Z for proof reading this thesis and providing many helpful pointers. A big thanks to the developers of Elixir and the tools around it, especially Plug, which made the prototype a pleasure to work with.
+%\noindent Thank you X, Y \& Z for proof reading this thesis and providing many helpful insights. A big thanks to the developers of Elixir and the tools around it, especially Plug, which made the development process a pleasure.
 
 \vspace{5mm}
 
-%\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing this thesis. Nils was a great teacher and the one who introduced me to computers at a young age which made all of this possible.
+%\noindent Finally, I would like to to make a special dedication my father, Nils Fagerberg, who passed away just when I started writing this thesis. Nils was a great teacher and the one who introduced me to the world of computers at a young age---he made all of this possible.
 }
 
 \theabstract{
-This thesis investigates the benefits and complications of working with API-gateways in order to optimise the communication between clients and servers. We do this by examining the underlying protocol, HTTP, and the general theory regarding API-gateways.
+This thesis investigates the benefits and complications around working with API-gateways in order to optimise the communication and interaction between clients and servers. We do this by examining the underlying protocol HTTP and the general theory regarding API-gateways.
 
-An API-gateway framework was developed to help understand some of the common problems and provide a way to rapidly develop solutions to them. This framework was then applied in case studies in order to find problem areas, and solve, them in real production systems from the industry.
+An API-gateway framework was developed to help further understanding some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to find problematic areas and solve them in real world production systems used in the industry.
 }
 
 \keywords{API, gateway, proxy, communication, optimisation, performance, HTTP}
@@ -91,37 +91,39 @@ An API-gateway framework was developed to help understand some of the common pro
 \makefrontmatter
 
 \chapter{Introduction}
-This thesis started with the assumption that the traffic between back-end server APIs and clients was not properly optimised --- especially in mobile clients. The reason behind this was thought to be a mismatch between the client expectations and the defined server responses. If, for example, a back-end API was developed with a desktop client in mind and a mobile client was added later on, then the traffic to the mobile client would not be properly adapted if the server was not rewritten.
+This thesis started with the assumption that the traffic between back-end server APIs and the clients was not properly optimised. The reason behind this was thought to be a mismatch between the client expectations and the defined server responses. If, for example, a back-end API was developed with a desktop client in mind but a mobile client was introduced at a later stage, the traffic to the mobile client would not be properly adapted to fit its needs.
 
-In the world of software, and especially in the enterprise area, there are many reasons why the back-end server itself cannot be rewritten. This can be because of cost factors, risk of breaking existing clients, ownership issues or even lack of knowledge. Because of this, we wanted to investigate whether the introduction of a new software layer between the client and server could mitigate this issue.
+In the world of software development, perhaps especially in the enterprise area, there are many reasons why the back-end servers themselves cannot be rewritten. It can be because of cost factors, risk of breaking existing clients, ownership / licensing issues or even lack of proper knowledge. Because of reasons like these, we wanted to investigate whether the introduction of a new software layer between the client and server could mitigate these issues.
 
 \section{Method}
 
-This new software layer between the client and server corresponded to the concept of an API-gateway. We designed this thesis to consist of four parts which all builds upon each other. 
+The previously mentioned new software layer between the client and server corresponds to the concept of an API-gateway. This thesis has been designed to consist of four majors chapters, all of which build upon the previous chapters---these chapters are briefly introduced below. Finally, we end the thesis with a conclusion chapter which ties the acquired knowledge from the four major chapters together.
 
 \subsection{Performance issues with HTTP/1.1}
-First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems appears when the server and client does not communicate efficiently. We look at the weaknesses in this protocol and how they can have been solved over the years in the industry.
+First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems it introduces when the server and client does not communicate in an efficient manner. We look at the problematic areas in the protocol and how they, by utilising clever tricks from the industry, have been mitigated over the years.
 
 \subsection{API-gateways in theory}
-Secondly, we theorise around the broad concept of API-gateways. Here we try to define the different ways the API-gateway can improve the relationship between clients and servers, and how the problems defined in the previous HTTP chapter can be solve.
+Secondly, we theorise around the broad subject API-gateways. Here we try to define some of the different ways the API-gateway can improve the relationship between clients and servers. We investigate how the problems explored in the previous chapter about HTTP can be solved by utilising an API-gateway.
 
 \subsection{API-gateway framework}
-Thirdly, an API-gateway framework was written to gain a better understanding of the problem from a practical and technical point of view. This framework allows us to deeper understand and benchmark the problems defined in earlier chapters and provide real applicable solutions to them.
+Thirdly, an API-gateway framework was written to in order to better understand the API-gateway problems from a practical and deeper technical point of view. This framework allows us to not only understand but also benchmark the problems defined in earlier chapters and provide real applicable solutions to them.
 
 \subsection{Case studies}
-Finally, we did a case study on real-world production systems. This consisted of an analysis to determine whether the systems had issues which could be resolved with the introduction of an API-gateway. A solution was then created for that system with the framework from the previous chapter. This was done in order to verify that not only could the framework be used in real-world scenarios but also to be able to benchmark the results before and after the introduction of it. By doing so, we can determine in which scenarios it is practical to implement an API-gateway and how
+Finally, we did a case study on three real-world production systems. The case studies consists of an analysis to determine whether the systems had any issues which could be resolved with the introduction of an API-gateway. A solution was created for a selected part of that system with the framework described in the previous chapter. This was done in order to verify that not only could the framework be used in real-world scenarios, but also to provide a method for benchmarking the results before and after the introduction of the API-gateway. By doing so, we can determine in which scenarios it is practical to implement an API-gateway, how it can be done from a practical point of view and what the expected results will be.
 
 \chapter{Performance issues with HTTP/1.1}
-Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standard version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The next version, HTTP/2 (originally named HTTP/2.0), is expected to be finalised in 2015 (ändra här om det publiceras innan ex-jobbet är klart). Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the protocol used on all web servers and middle-boxes such as proxies and firewalls --- and even longer for many legacy systems and clients used in the enterprise environments. It is therefore relevant to  acknowledge and mitigate the performance issues related to HTTP 1.1, even many years after the release of HTTP/2.
+Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standardised version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The subsequent version, HTTP/2 (originally named HTTP/2.0), has been approved for publication as a proposed standard on Feb 17, 2015, by IESG. Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the default protocol used on all web servers and middle-boxes such as proxies and firewalls---and even longer for many legacy back-end systems and clients used in the slow-moving enterprise environments. It is therefore relevant to acknowledge and mitigate the performance issues related to HTTP/1.1, even many years after the release of HTTP/2.
 
 \section{Headers}
 \label{headers}
 
-It is common in modern web applications to send a lot of HTTP requests toward one or many back-end APIs. These requests can be very small, such as a PUT request to update a single field, but the actual payload of a HTTP requests can also be considered small in many cases when it is compared to the total amount of data being transfered. There are typically plenty of headers along with every HTTP request and these headers can be a substantial amount of every request and may therefore end up being the performance bottle neck --- especially if a lot of small requests has to be transmitted often.
+It is common in modern web applications to send a lot of HTTP requests, consisting of headers and a payload, toward one or many back-end APIs. The payload of these requests can be very small, such as a PUT request with the intention of updating a single field. When the payload is small, it is very noticeable how much data has to be transfered along with it in order to perform a HTTP request.
 
-As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response is serialised in JSON format. 
+There are typically plenty of headers transferred with every HTTP request and these headers can end up being a substantial amount of the total data of every request. The data stored in the headers may end up being the performance bottle neck with many HTTP requests---especially if a lot of small requests has to be transmitted on a frequent basis.
 
-Suppose client was built which is supposed to show details about, for example, your 10 most followed friends. We can benchmark how making 10 separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all 10 users with one request.
+As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response from the API is encoded in JSON format. 
+
+Suppose a client was built with the intention to show details about, for example, your ten most followed friends. We can benchmark how making ten separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all ten users with one request---the difference being that headers are sent only once versus ten times.
 
 \begin{figure}[H]
   \centering
@@ -145,17 +147,17 @@ Suppose client was built which is supposed to show details about, for example, y
   \caption{User data response from the Instagram API encoded in JSON format.}
 \end{figure}
 
-HTTP requests can be benchmarked using cURL\cite{curl}. To make the requests authentic and look like they were made from an actual browser, we tell cURL to use the default headers provided by the browser Firefox. These headers includes among other things the browsers User-Agent, media types which are acceptable responses and so on. A local server running on port 9000 is used to simulate the the Instagram API in this particular example.
+The HTTP requests can be benchmarked using the command-line tool cURL\cite{curl}. To make the requests authentic and look like they were made from an actual browser, we tell cURL to use the default headers provided by the browser Mozilla Firefox. These headers include among other things the browsers User-Agent, media types which are acceptable responses and so on. A local server running on port 9000 is used to simulate the the Instagram API in this particular example.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true]
 curl --trace-ascii - 'http://localhost:9000/user/snoopdogg' -H 'Host: localhost:9000' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'
 \end{lstlisting}
-  \caption{The cURL command used in the benchmarks.}
+  \caption{The cURL command used in the benchmark.}
 \end{figure}
 
-Performing this request will give us the following results:
+Executing this request with cURL will give us the following result:
 
 \begin{figure}[H]
   \centering
@@ -183,13 +185,13 @@ Performing this request will give us the following results:
 0000:
 <= Recv data, 286 bytes (0x11e)
 \end{lstlisting}
-  \caption{Results from cURL when sending an HTTP request to fetch one user. The actual response payload has been omitted.}
+  \caption{The resulting output from cURL when sending an HTTP request to fetch one user. The actual response payload has been omitted.}
   \label{fig:headers_overhead}
 \end{figure}
 
-We can from the output in Figure~\ref{fig:headers_overhead} that 355 bytes are sent as request header data, 87 bytes are received as response header data (17 + 47 + 21 + 2) and the actual response payload is 286 bytes. This means 61\% of every request to this API end-point are nothing but header data.
+We can from the output in Figure~\ref{fig:headers_overhead} that 355 bytes are sent as request header data (line 1), 87 bytes are received as response header data (line 14, 16, 18 and 20) and the actual response payload is 286 bytes (line 22). This means that 61\% of the data of every request sent to the Instagram API end-point are nothing but header data.
 
-Some of the header data is often required and it does contain useful information so we can't just discard it. But if we instead would expose one end-point where all ten users could be requested simultaneously with one HTTP request, and that end-point could return an array of JSON objects instead, then we would get away with only transmitting the header data once and not ten times.
+Some of the header data is often required and as they do contain useful information so we can't just discard them. Consider instead if we would expose a new end-point where all ten users could be requested simultaneously with one HTTP request instead of ten, and that the end-point could return an array of JSON objects instead of a single one. In that case, we would get away with only transmitting the header data once and not ten times.
 
 \begin{figure}[H]
   \centering
@@ -218,13 +220,13 @@ Some of the header data is often required and it does contain useful information
 0000:
 <= Recv data, 2871 bytes (0xb37)
 \end{lstlisting}
-  \caption{Results from cURL when performing one HTTP request to fetch 10 users. The actual response payload has been omitted.}
+  \caption{Results from cURL when performing one HTTP request to fetch ten users. The actual response payload has been omitted.}
   \label{fig:headers_overhead2}
 \end{figure}
 
-From the results in Figure~\ref{fig:headers_overhead2}, we can see that the size of the request headers has been increased from 355 to 446 bytes because of the longer URL which specifies all users to fetch. The response headers are increased with just one byte from 87 to 88 because of the increased \emph{Content-Length} field. This results in a total header size of 534 bytes. The response payload has increased from 286 bytes to 2871 bytes - about ten-fold which is expected since we request 10 users at once instead of one per request. A very small increase in data is added because of the array syntax in the JSON format. 
+From the results in Figure~\ref{fig:headers_overhead2}, we can see that the size of the request headers has been increased from 355 to 446 bytes (line 1) because of the longer URL which specifies all users to fetch. The response headers has increased with just one byte from 87 to 88 (line 15, 17, 19 and 21) because of the increased field \enquote{Content-Length}. This results in a combined header size of 534 bytes. The response payload has increased from 286 bytes to 2871 bytes (line 23)---about tenfold which is expected since we request ten users at once instead of one per request. A minor increase in data is added because of the new array syntax in the JSON format response.
 
-By not doing ten separate requests, and instead do one concatenated request, the overhead added as a result of all the headers have now been reduced from 61\% to 16\%. This number will scale accordingly to the number of requests concatenated --- the more requests concatenated, the lesser amount of overhead from HTTP headers.
+By not doing ten separate requests, and instead do one concatenated request, the overhead added as the result of all the headers have now been reduced from 61 to 16\% of the total transmitted data. This number will continue to scale accordingly to the number of requests concatenated---the more requests concatenated, the lesser amount of overhead from HTTP headers.
 
 \begin{figure}[H]
   \centering
@@ -236,24 +238,24 @@ By not doing ten separate requests, and instead do one concatenated request, the
         \% headers of total data & 61\% & 16\% \\ \hline
       \end{tabular}
     \end{center}
-  \caption{Header and payload ratio when doing ten separate requests, compared to one concatenated request, to fetch all users.}
+  \caption{The headers-payload ratio when fetching ten user in one request compared to ten requests.}
 \end{figure}
 
-The header data displayed in this example should be viewed as a lower bound. In practise, HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the headers and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
+The headers data used in this example can even be viewed as a lower bound. In practise, HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the headers data and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
 
-This is one of the issues that may (ändra "may" om det stämmer när http2 släpps - kolla även HTTP compressions och säkerhetsproblem) be mitigated by using HTTP/2 which remembers which headers that has already been sent and therefore doesn't need to retransmit them on subsequent requests\cite[page 222]{HPBN}.
+This is one of the issues which can be mitigated by using HTTP/2 since the it remembers which headers that has already been sent and therefore does not need to retransmit them on subsequent requests\cite[page 222]{HPBN}.
 
 \section{Maximum TCP connections}
 \label{max_tcp}
-The HTTP/1.X protocol does not allow data to be multiplexed over the same connection\cite[p.194]{HPBN}. For this reason, most browser vendors has introduced a connection pool of six TCP connections per host (the HTTP/1.1 specification limits the pool to two connections\cite{rfc2616} per host, but modern browsers have refused to conform to this standard in order to decrease the load times).
+The HTTP/1.1 protocol does not allow data to be multiplexed over the same connection\cite[p.194]{HPBN}. For this reason, most browser vendors have introduced a connection pool of six TCP connections per host (the HTTP/1.1 specification limits the pool to two connections\cite{rfc2616} per host, but modern browsers have refused to conform to this standard in order to decrease the load times).
 
-A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to get around this limit. If the subdomains \{shard1, shard2, \ldots\}.example.com were created and they all pointed to the same server, then more than six TCP connections can be used in parallel at the same time to the same server from a browser. 
+A common way to deal with the connection limit is to use domain sharding. Since the limit of six TCP connections are on a host name basis, it is possible to create multiple subdomains to get around this limitation. If the subdomains \{shard1, shard2, \ldots\}.example.com were created and they all pointed to the same server, then more than six TCP connections could be used in parallel at the same time to the same server from a browser, since the limitation is on a host-name basis.
 
-This approach is not without downsides as every new hostname requires a new DNS lookup, a TCP three-Way handshake and a TCP slow start which can have a negative impact on the load times\cite[page 199]{HPBN} --- just the DNS lookup typically takes 20-120 ms\cite[page 63]{HPWS}. Another problem with domain sharding is the fact that the browser always opens six connections per shard even if not all, or none of them are used. In addition, domain sharding can be a complicated manual process to set-up and it is hard to determine how many shards to use for optimal performance. When Yahoo investigated this problem they concluded that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
+This approach is unfortunately not without its downsides as every new hostname requires a new DNS lookup, a TCP three-way handshake and a TCP slow start, all of which can have a negative impact on the load times\cite[page 199]{HPBN}---just the DNS lookup typically takes 20-120 ms\cite[page 63]{HPWS}. Another problem with domain sharding is the fact that the browser always establishes six connections per shard even if not all, or even none of them are used. In addition to these problems, domain sharding is a complicated manual process to set-up and it is hard to determine how many shards to use for achieving optimal performance. Yahoo investigated this problem and they concluded that you should, as a rule of thumb, use at least two, but no more than four domain shards\cite{yahoo-performance-4}.
 
-As an example, we can benchmark the impact of the connection pool limit when downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails, each encoded in base-64 format. The connection we are using in this example has a lot of bandwidth but suffers from high latency.
+To illustrate this problem with an example, we can benchmark the impact of the connection pool limit when downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails and that the connection we are using in this example has a lot of bandwidth but suffers from high latency.
 
-If all images were retrieved using one HTTP request per thumbnail, we can see in Figure~\ref{fig:tcp_bottleneck} that the six TCP connection limit will become a bottleneck.
+We can see in Figure~\ref{fig:tcp_bottleneck} that the six TCP connection limit will become a bottleneck if all images were retrieved with one HTTP request per thumbnail. The results typically looks like stairs where the requests wait in pair of  six for a free TCP connection.
 
 \begin{figure}[H]
   \centering
@@ -264,7 +266,7 @@ If all images were retrieved using one HTTP request per thumbnail, we can see in
   \label{fig:tcp_bottleneck}
 \end{figure}
 
-We can calculate the total delay caused by latency in our example by with the following formula:
+We can calculate the total amount of delay caused by latency in our example with the following formula:
 
 \begin{equation}
 \mbox{total latency} = \mbox{number of thumbnails} * \frac{\mbox{latency per request}}{\mbox{number of parallel requests}}
@@ -273,49 +275,51 @@ We can calculate the total delay caused by latency in our example by with the fo
 In our example, we fetch 60 thumbnails on a connection which has a latency of ~300 ms to the server. Our browser (Google Chrome) can handle six parallel TCP connections which gives us the following result:
 
 \begin{equation}
-\mbox{total latency} = 60 * \frac{300}{6} = 3,000 \mbox{ms} = 3 \mbox{seconds}
+\mbox{total latency} = 60 * \frac{300}{6} \mbox{ ms}= 3,000 \mbox{ ms} = 3 \mbox{ seconds}
 \end{equation}
 
-If we instead could concatenate these 60 thumbnail-requests into one request, and the response instead would contain all of the thumbnails --- then we would only have to pay the latency cost once. This would reduce the total latency by an order of magnitude, from 3,000 ms to 300 ms, since we only have to pay the price for the latency once.
+If we instead could concatenate these 60 thumbnail requests into one request, and the response instead would contain all of the thumbnails---then we would only have to pay the latency cost once. This would reduce the total amount of latency by an order of magnitude, from 3,000 ms to 300 ms, since we only have to pay the price for the latency once and not once for every six thumbnails.
 
-It is worth pointing out that increasing the bandwidth of the connection would not resolve this problem as the latency is the only bottleneck in this example.
+As a side-note, it is worth pointing out that increasing the bandwidth of the connection would not resolve this problem as the latency is the only bottleneck in this example.
 
-It is not uncommon for browsers to wait idle for 100 - 150 ms before spending 5 ms to download an image. This means that latency is often accounting for 90-95\% of the total waiting time for the HTTP requests\cite{latency}.
+It is not uncommon for browsers to wait idle for 100--150 ms before spending 5 ms actually downloading an image. This means that latency often accounts for 90--95\% of the total waiting time for HTTP requests\cite{latency}.
 
 \subsection{Chunked responses}
-In the previous example where we fetched thumbnails, we often want to display them as soon as each individual image has been loaded and not wait for the entire concatenated response. 
+In the previous example where we fetched thumbnails, we often want to display each thumbnail as soon as each individual image has been loaded. This could cause problems now that we are using one concatenated request instead of a separate request for each image. Fortunately we can utilise chunked responses for this.
 
-When using a concatenated request to fetch multiple resources at the same time, the server can use chunked transfer encoding in the HTTP response to send the individual thumbnail data in chunks\cite{chunked}. By doing so, images, or any other data, can be displayed on the client as soon as each chunk is available, even out of order if necessary. 
+The HTTP server can utilise \enquote{chunked transfer encoding} in the HTTP responses in order to send the individual thumbnail data in chunks\cite{chunked} to the client. By doing so, images, or any other type of data, can be displayed in the client as soon as each chunk is available, even out of order if necessary. 
 
-This approach, with concatenated requests and a chunked response, has been successfully been implemented at Dropbox on their gallery software implementation\cite{dropbox_chunked}.
+This approach, with concatenated requests and chunked responses, has been successfully been implemented at Dropbox on their gallery software implementation\cite{dropbox_chunked}---much in the same fashion as the previous example.
+
+Chunked transfer-coding is the only encoding which HTTP/1.1 clients are required to understand\cite{chunked_required}. This makes it very attractive to use---especially in the use cases where data chunks can be separated in to logical pieces.
 
 \section{Compression}
 \label{compression}
 
-All requested uncompressed data, such as text, can be compressed before it is sent to the client to reduce the transfered data size. A common compression algorithm used in HTTP requests is GNU Zip (Gzip) and works best on text-based files such as HTML, CSS and JavaScript. Gzip has an expected compression rate of 60-80\% when used on text-based files\cite[page 237]{HPBN}.
+All requested data, such as text, can be compressed before it is sent to the client in order to reduce the transfered data size. A common compression algorithm used together with HTTP requests is GNU Zip (Gzip). Gzip works best on text-based files such as HTML, CSS and JavaScript and has an expected compression rate of 60--80\% when used on text-based files\cite[page 237]{HPBN}.
 
 It is worth mentioning that there are scenarios where Gzip compression applied to very small files can increase the total size because of the Gzip dictionary overhead. This problem can be mitigated by defining a minimum file size threshold\cite{google_gzip}.
 
-As an example, arbitrary user data for 50 users was created and stored in JSON format. When this data was requested from a server without compression, the total content-length of the HTTP request payload amounted to 55,205 bytes of data. By applying Gzip compression to the same data, the content length was reduced to 16,563 bytes of data which amounts to a 70\% space saving. 
+As an example, arbitrary user data for 50 users was created and encoded in JSON format. When this data was requested from a server without compression, the total size of the HTTP request payload amounted to 55,205 bytes of data. By applying Gzip compression to the same data, the content length was reduced to 16,563 bytes of data which amounts to a 70\% space saving. 
 
 \begin{equation}
-\mbox{Space Saving} = 1 - \frac{\mbox{Compressed Size}}{\mbox{Uncompressed Size}} = 1 - \frac{16,563}{55,205} = 70\%
+\mbox{Space Saving} = 1 - \frac{\mbox{Compressed size}}{\mbox{Uncompressed size}} = 1 - \frac{16,563}{55,205} \approx 70\%
 \end{equation}
 
-An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would've otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
+An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would have otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
 
 \section{Related works}
 High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media
 
 \begin{quote}
-	The essential book which covers all aspects around browser networking and the limitations around the HTTP protocol.
+	An essential book about browser networking performance. It covers many aspects around browser networking and the limitations within the HTTP protocols.
 \end{quote}
 
 \vspace{5mm}
 \noindent High Performance Web Sites - Essential Knowledge for Front-End Engineers, Ilya Grigorik, 2007, O'Reilly Media.
 
 \begin{quote}
-	How to build high performing web sites with technologies which can be applied inside the API-gateways.
+	A book about how to build high performing web sites with technologies which also can be applied inside the API-gateways.
 \end{quote}
 
 \vspace{5mm}
@@ -331,7 +335,7 @@ High Performance Browser Networking - What every web developer should know about
 \noindent \url{https://www.mnot.net/blog/2014/01/30/http2_expectations}
 
 \begin{quote}
-	A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, where he briefly explores nine tings to expect from HTTP/2.
+	A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, in which he briefly explores nine tings to expect from HTTP/2.
 \end{quote}
 
 \chapter{API-gateways in theory}
@@ -1170,9 +1174,11 @@ As seen in the case studies, the API-gateway concept is not a silver bullet and 
 
 HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering of high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years --- the need to change will not only be demanding for the browser- and server-developers but all intermediate devices such as proxies need to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by HTTPS\cite{http2_ssl}. This further highlights the need for an optimising API-gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance for the communications between the clients and back-ends.
 
-From the case studies we have seen that API-gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively developed anymore. In such scenarios, API-gateways can move the burden away from the client and place it closer to the back-end where network costs are negligible. However, the API-gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API-gateway can make the client development easier and less error prone.
+From the case studies we have seen that API-gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively developed anymore. In such scenarios, API-gateways can move the burden away from the clients and place it closer to the back-end where network costs are negligible. 
 
-API-gateways can also be helpful when designing new systems which has to support a variety av clients. As seen with Netflix\cite{netflix}, which supports many different clients with different needs, the client team can be responsible for developing their own API-gateway end-points which serves their client a custom tailor-made response. This puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and increases performance.
+The API-gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API-gateway can make the client development easier and less error prone. 
+
+API-gateways can also be helpful when designing new systems which has to support a variety av clients. As seen in the architectural design implemented at Netflix\cite{netflix} which supports many different clients with different needs, the client team is responsible for developing their own API-gateway end-points which serves their client a custom tailor-made response. This approach puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and can increases overall performance.
 
 \section{Future work}
 
@@ -1183,7 +1189,7 @@ The prototype framework developed in this thesis used Elixir but there is no dou
 \cleardoublepage
 \phantomsection
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 \bibliography{anton_msc}
 
 \begin{appendices}
@@ -1202,6 +1208,9 @@ HATEOAS, Hypermedia as the Engine of Application State, is a constraint to the R
 
 \section{DMZ}
 DMZ, DeMilitarised  Zone, is an isolated subnet located outside the protected LAN where workstations and internal back-end systems are located. It is common that machines which have to be directly exposed from the internet are placed inside the DMZ.
+
+\section{SOAP}
+SOAP is an XML-based protocol used for data exchange. SOAP is primarily transported using with the underlying protocol HTTP but can also be used with other protocol such as the e-mail protocol SMTP.
 
 \section{Proxy}
 A proxy server acts as the intermediary between clients and servers by relaying the data between them.
