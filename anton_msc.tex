@@ -921,6 +921,9 @@ Tyk - An open source, lightweight, fast and scalable API Gateway
 
 
 \chapter{Cases studies}
+
+As part of this thesis, we have evaluated three systems for find potential usages for API-gateways. The goal was to look at all systems from different point of views so if two systems had common problems, then it would only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API-gateways.
+
 \section{Streamflow}
 Streamflow\cite{streamflow} is a system used in municipalities to communicate with its citizens and organisations to communicate with their customers. It is used to register and track customer cases and works as a central case management hub.
 
@@ -1007,9 +1010,9 @@ In the end, the code in the client to perform these requests and transform the r
 
 It is hard to argue for the inclusion of an API-gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API-gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API-gateway will not provide any substantial gain.
 
-\chapter{XML thing}
+\chapter{Accountant System}
 
-XMLThing is a system used for keeping track of X. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP --- but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}, which enables easy (de)serialisation of JavaScript objects to JSON.
+Accountant System is a code name for a system used by a large Swedish accountant firm to help them keep track of important documents, tasks and priorities. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP --- but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}, which enables easy (de)serialisation of JavaScript objects to JSON.
 
 \section{Working with XML in JSON clients}
 
@@ -1138,6 +1141,29 @@ To avoid having to maintain a collection of XML-template in each client, we can 
     \end{center}
   \caption{The API-gateway maintains a list of XML-templates so the client can communicate to the back-end without them.}
 \end{figure}
+
+\section{Evaluation}
+
+In the case of Accountant Software, we can see a decrease in bandwidth used when dropping the XML-format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP (Simple Object Access protocol) with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw a fair parallel with that study to this case study.
+
+
+The biggest gain is likely to be found in developer productivity and stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here isn't entirely fair either since SOAP is a protocol and not just XML while REST is an architectural style which can utilise XML --- and that is the case for Accountant Software.
+
+What we can do is to look at the limitations in XML for Accountant Software in particular. The first thing to note is that all modern browsers has built in support for Parsing JSON and there is a natural 1:1 relationship between JavaScript objects encapsulating data and the JSON format. For Account Software to work with XML, a third-party library had to be introduced and all API-responses has to be validated to make sure that the JSON-to-XML parsing works in a decent manner as there are pitfalls to watch out for. For clients written in JavaScript, it would be a more natural approach to use an JSON-based API. 
+
+An API-gateway can, like the client already does, automatically translate the XML-based responses from the API to JSON. The benefit of placing the translation step in the API-gateway is that all clients will translate the XML to JSON in the exactly the same way instead of relying on local libraries.
+
+When looking at the requests to the back-end API, we earlier concluded that the XML in many cases is unnecessary since all information describing data is already present in the URL in combination with the HTTP verb. By moving all XML-templates to the API-gateway, all clients can utilise a much simpler API. An additional benefit to this approach is that all XML-templates are gathered in one place in contrast to the current approach where every client has to keep track of their own collection of templates.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/api_gateway_xml.png}
+    \end{center}
+  \caption{The API-gateway exposes a simpler REST interface to the client and converts this to the more complex XML-based interface to the back-end.}
+\end{figure}
+
+
 
 \chapter{Conclusions}
 As seen in the case studies, the API-gateway concept is not a silver bullet and the need for an API-gateway varies on a number of factors.
