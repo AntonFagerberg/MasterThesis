@@ -1029,14 +1029,14 @@ It is hard to argue for the inclusion of an API gateway in the current state of 
 
 \section{Accountant System}
 
-Accountant System is a code name for a system used by a large Swedish accountant firm to help them keep track of important documents, tasks and priorities. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP --- but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}, which enables easy (de)serialisation of JavaScript objects to JSON.
+Accountant System is a code name for a system used by a large Swedish accountant firm to help them keep track of important documents, tasks and internal priorities. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP---but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}. This enables easy (de)serialisation of JavaScript objects to JSON in all modern browsers.
 
 \subsection{Working with XML in JSON clients}
 \label{xml_json}
 
-When it comes to conversion from XML to JSON, and vice versa, there is no standard which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
+When it comes to converting XML to JSON, and vice versa, there is no standardised approach which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
 
-In an article from XML.com\cite{xml_json} which was published by O'Riley, a standard conversion algorithm was developed to highlight some of the issues around this topic. One of the examples started with a very simple XML structure defined as:
+In an article from XML.com\cite{xml_json} which was published by O'Riley Media, a conversion algorithm was developed to highlight some of the issues regarding this topic. One of the examples started with a very simple XML structure defined in Figure~\ref{fig:xml_structure}.
 
 \begin{figure}[H]
   \centering
@@ -1049,12 +1049,11 @@ In an article from XML.com\cite{xml_json} which was published by O'Riley, a stan
 </e>
 \end{lstlisting}
     \end{center}
-  \caption{Simple XMP data structure.}
+  \caption{Simple XML data structure.}
+  \label{fig:xml_structure}
 \end{figure}
 
-
-
-An algorithm was developed to convert the XML-structure to JSON. When this algorithm was tested, the first naive approach to convert it to JSON would result in the following invalid JSON structure:
+An algorithm was developed to convert the XML-structure to JSON notation. When this algorithm was tested, the first naive approach to convert the structure from Figure~\ref{fig:xml_structure} to JSON would result in the following invalid JSON structure as seen in Figure~\ref{fig:xml_wrong}.
 
 \begin{figure}[H]
   \centering
@@ -1067,10 +1066,11 @@ An algorithm was developed to convert the XML-structure to JSON. When this algor
 }
 \end{lstlisting}
     \end{center}
-  \caption{First attempt at transforming XML to JSON. The result is an invalid JSON data structure.}
+  \caption{The first attempt to transform XML to JSON. The result is an invalid JSON data structure because of the duplicate key \enquote{a}.}
+  \label{fig:xml_wrong}
 \end{figure}
 
-The problem with this structure is that we can not have \enquote{a} as the key in two places in an associative array --- \enquote{a} has to be unique. If we try to solve this by converting the values for the key \enquote{a} to a list, then we get a syntactical valid JSON structure:
+The problem with the JSON structure in Figure~\ref{fig:xml_wrong} is that we can not have \enquote{a} as the key in two places in an associative array---\enquote{a} has to be unique. If we try to solve this by converting the values for the key \enquote{a} to a list instead, then we get a syntactical valid JSON structure as seen in Figure~\ref{fig:json_wrong}.
 
 \begin{figure}[H]
   \centering
@@ -1082,12 +1082,14 @@ The problem with this structure is that we can not have \enquote{a} as the key i
 }
 \end{lstlisting}
     \end{center}
-  \caption{The second approach to transform XML to JSON. The result is valid JSON but the ordering problem has been introduced.}
+  \caption{The second approach for transforming XML to JSON. The result is a valid JSON structure but the ordering problem has now been introduced.}
+  \label{fig:json_wrong}
 \end{figure}
 
-However, another problem has been introduced with this approach which is that the element order is no longer perserved. If we would iterate over the values in the XML, we would end up with \enquote{some, textual, content} but when we now iterate over our JSON-structure we would end up with \enquote{some, content, textual} which is not the desired result.
+However, another problem has been introduced with this approach which is that the element order is no longer perserved. If we would iterate over the values in the XML from Figure~\ref{fig:xml_structure}, we would end up with \enquote{some, textual, content} but when we iterate over our JSON-structure from Figure~\ref{fig:json_wrong} we would end up with \enquote{some, content, textual} which is not the desired result.
 
-Based on this, the following conclusions was made by XML.com:
+\vspace{5mm}
+\noindent Based on this, the following conclusions was made by XML.com:
 
 \begin{quote}
 
@@ -1095,30 +1097,23 @@ Based on this, the following conclusions was made by XML.com:
 
 \end{quote}
 
-Note that the algorithm from XML.com is just one approach to solve some of the problem around XML-JSON conversion --- there are many additional issues which makes the conversion very complex. As with many things where there is no 1:1 mapping, different library developers and corporations are developing their own standards to handle the conversion.
+Note that the algorithm from XML.com is just one approach to solve some of the problem around XML-JSON conversion---there are many additional issues which makes this conversion very complex. As with many things where there is no 1:1 mapping, different library developers and corporations are developing their own standards to handle the conversion.
 
-To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standard which adds additional data to handle potential corner-cases. When these conversions are performed recursively with each output added to the others input, you would expect that the formats stay the same, instead the data structure will grow indefinitely until the browser crashes.
+To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standards with different syntactical data. When these conversions are performed recursively with each output added to the others input, you would expect that the formats would stay the same, switching back and forth between JSON and XML---instead the data structure will grow indefinitely until the browser crashes.
 
-In the end --- the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
+In the end---the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
 
 \subsection{Translating XML APIs}
-In XMLThing, the XML-JSON conversion was handled in two different ways --- one way for requests and one for responses.
+In Accountant System, the XML-JSON conversion was handled in two different ways---one way for requests and one for responses.
 
 \subsubsection{Response}
 
-When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which could then be used as JavaScript objects in the views, often after some transformations. As with previous examples, this adds additional complexity to the client which has to transform the responses before they can be properly handled by the client.
+When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which then could be used as JavaScript objects in the views, often after some transformations. As in the previous examples, this adds additional complexity to the client which now has to transform the responses before they can be properly handled by the client.
 
 \subsubsection{Request}
-What is more interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT and DELETE which indicates how the resource should be manipulated. Secondly, we have an end-point which is we communicate with over a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
+More interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT and DELETE which indicates how the underlying resource should be manipulated. In addition to this, we have an end-point which is we communicate with via a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
 
-In the case of XMLThing, we can look at the simplest scenario which is saving a note. To do this, the client has to send the following XML-data to the back-end:
-\begin{figure}[H]
-  \centering
-    \begin{center}
-      \includegraphics[width=0.9\textwidth]{images/client_templates.png}
-    \end{center}
-  \caption{Each client has to maintain their own collection of XML-templates in order to make proper requests to the API.}
-\end{figure}
+In the case of Accountant System, we can look at the simplest scenario which is saving a note. To do this, the client has to send the XML-data seen in Figure~\ref{fig:xml_account_example} to the back-end.
 
 \begin{figure}[H]
   \centering
@@ -1132,46 +1127,41 @@ In the case of XMLThing, we can look at the simplest scenario which is saving a 
 \end{lstlisting}
     \end{center}
   \caption{XML-data used for creating a new note.}
-  \label{fig:xml_example}
+  \label{fig:xml_account_example}
 \end{figure}
 
 
-This XML data has to be sent with a POST to a specific URL \enquote{/note/create}.
+This XML data has to be sent with a POST HTTP request to a specific URL with ends with \enquote{/note/create}. We can reason about what the purpose of the XML is. From the URL we can deduce where the information should be sent and what information we are sending---a note. We can from the HTTP verb POST see that we want to create a new note and in this case, the URL also contains this information since it ends with \enquote{/create}. The only thing missing to complete this action is the actual payload which is the note content, in this case \enquote{This is the actual note.}.
 
-Here we can reason about what the purpose of the XML is. From the URL we can deduce where the information should be sent and what information we are sending --- a note. We can from the HTTP verb POST see that we want to create a new note and in this case, the URL also contains this information since it ends with \enquote{/create}. The only thing missing to complete this action is the actual payload which is the note, in this case \enquote{This is the actual note.}. It is also worth pointing out that the the actual note amounted to roughly 1/3 of the payload and about 2/3 was structural XML data in the example in Figure~\ref{fig:xml_example}.
-
-When working with this API, the XML is entirely redundant from the clients point of view, but for historical reasons the back-end API can not change. This puts an additional strain and layer of complexity in every new client which interacts with the REST API. Not only do the client have to know about the normal interaction methods such as the URL and HTTP verbs but it also needs to have a collection of XML-templates with a different XML-template for every request it wants to execute.
+When working with this API, the XML is entirely redundant from the clients point of view and it does not add any value, but for historical reasons the back-end API can not change. This puts an additional strain and layer of complexity in every new client which interacts with the REST API. Not only do the client have to know about the normal interaction methods such as the URL and HTTP verbs but it also needs to maintain a collection of XML-templates and use a different XML-template for every request it wants to execute. It is also worth pointing out that the the actual note amounted to roughly 1/3 of the total payload data and about 2/3 was structural XML data in the example from Figure~\ref{fig:xml_account_example}.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/client_templates.png}
     \end{center}
-  \caption{Each client has to maintain their own collection of XML-templates in order to make proper requests to the API.}
+  \caption{Each client has to maintain its own collection of XML-templates in order to make requests to the API.}
 \end{figure}
 
-To avoid having to maintain a collection of XML-template in each client, we can introduce an API gateway to do this job. By introducing an API gateway, we can expose similar end-points which works without any XML in the client. The API gateway will maintain the only list of XML-templates which it uses communicate to the back-end.
+To avoid having to maintain a collection of XML-template in each client, we can introduce an API gateway to do that instead. By introducing an API gateway, we can expose similar end-points which works without any XML in the client. The API gateway will maintain the only collection of XML-templates which it uses for translating the clients API-requests to back-end API requests. This makes the development of clients a lot easier from the API-call point of view but also has the benefit that there is only one, easily maintainable, collection of XML-templates.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/gateway_templates.png}
     \end{center}
-  \caption{The API gateway maintains a list of XML-templates so the client can communicate to the back-end without them.}
+  \caption{The API gateway maintains a collection of XML-templates so the client can communicate to the back-end without them.}
 \end{figure}
 
 \subsection{Evaluation}
 
 In the case of Accountant Software, we can see a decrease in bandwidth used when dropping the XML-format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP (Simple Object Access protocol) with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw a fair parallel with that study to this case study.
 
+The biggest gain in utilising an API gateway is likely to be found in developer productivity and code stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here is not entirely fair either since SOAP is a protocol and not just XML while REST is an architectural style which can utilise XML---and that is the case for Accountant Software.
 
-The biggest gain is likely to be found in developer productivity and stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here isn't entirely fair either since SOAP is a protocol and not just XML while REST is an architectural style which can utilise XML --- and that is the case for Accountant Software.
+What we can do is to look at the limitations in XML for Accountant Software in particular. The first thing to note is that all modern browsers has built in support for parsing JSON and there is a natural 1:1 relationship between JavaScript objects encapsulating data and the JSON format. For Accountant Software to work with XML, a third-party library had to be introduced and all API-responses has to be validated to make sure that the JSON-to-XML parsing works in a decent manner as there are pitfalls to watch out for. For clients written in JavaScript, it would be a more natural approach to use an JSON-based API. 
 
-What we can do is to look at the limitations in XML for Accountant Software in particular. The first thing to note is that all modern browsers has built in support for Parsing JSON and there is a natural 1:1 relationship between JavaScript objects encapsulating data and the JSON format. For Account Software to work with XML, a third-party library had to be introduced and all API-responses has to be validated to make sure that the JSON-to-XML parsing works in a decent manner as there are pitfalls to watch out for. For clients written in JavaScript, it would be a more natural approach to use an JSON-based API. 
-
-An API gateway can, like the client already does, automatically translate the XML-based responses from the API to JSON. The benefit of placing the translation step in the API gateway is that all clients will translate the XML to JSON in the exactly the same way instead of relying on local libraries.
-
-When looking at the requests to the back-end API, we earlier concluded that the XML in many cases is unnecessary since all information describing data is already present in the URL in combination with the HTTP verb. By moving all XML-templates to the API gateway, all clients can utilise a much simpler API. An additional benefit to this approach is that all XML-templates are gathered in one place in contrast to the current approach where every client has to keep track of their own collection of templates.
+An API gateway can, like the client already do, automatically translate the XML-based responses from the API to JSON. The benefit of placing the translation step in the API gateway is that all clients will translate the XML to JSON in the exactly the same way instead of relying different on local libraries.
 
 \begin{figure}[H]
   \centering
@@ -1181,18 +1171,18 @@ When looking at the requests to the back-end API, we earlier concluded that the 
   \caption{The API gateway exposes a simpler REST interface to the client and converts this to the more complex XML-based interface to the back-end.}
 \end{figure}
 
-
+When looking at the requests to the back-end API, we earlier concluded that the XML in many cases is unnecessary since all information describing data is already present in the URL in combination with the HTTP verb. By moving all XML-templates to the API gateway, all clients can utilise a much simpler API. An additional benefit to this approach is that all XML-templates are gathered in one place in contrast to the current approach where every client has to keep track of their own collection of templates.
 
 \chapter{Conclusions}
-As seen in the case studies, the API gateway concept is not a silver bullet and the need for an API gateway varies on a number of factors.
+As seen in the case studies, the API gateway concept is not a silver bullet and the need for an API gateway varies on a number of factors such as which technology is used in the client and back-end servers, and how well the API can be adapted to the clients needs. We have also seen that API gateways can be used for many different purposes---from network performance to reducing code complexity and increasing developer productivity.
 
-HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering of high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years --- the need to change will not only be demanding for the browser- and server-developers but all intermediate devices such as proxies need to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by HTTPS\cite{http2_ssl}. This further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance for the communications between the clients and back-ends.
+HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the need to change will not only be demanding for the browser- and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by SSL (HTTPS)\cite{http2_ssl}. This further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
 
-From the case studies we have seen that API gateways can be very useful when working with legacy back-end APIs that doesn't conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself isn't actively developed anymore. In such scenarios, API gateways can move the burden away from the clients and place it closer to the back-end where network costs are negligible. 
+From the case studies we have seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the clients needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients---by placing the API gateways close to the back-ends, the network costs are negligible. 
 
-The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients want, the API gateway can make the client development easier and less error prone. 
+The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients can handle best, the API gateway can make the client development easier and less error prone while also boasting developer productivity.
 
-API gateways can also be helpful when designing new systems which has to support a variety av clients. As seen in the architectural design implemented at Netflix\cite{netflix} which supports many different clients with different needs, the client team is responsible for developing their own API gateway end-points which serves their client a custom tailor-made response. This approach puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and can increases overall performance.
+API gateways can also be helpful when designing new systems which has to support a variety av clients. This has been seen in the architectural design implemented at Netflix\cite{netflix} which supports many different clients with different needs. In the case of Netflix, the client teams are responsible for developing their own end-points which serves their client a custom tailor-made response. This approach puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and can increases overall performance.
 
 \section{Future work}
 
