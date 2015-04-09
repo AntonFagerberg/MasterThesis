@@ -940,24 +940,24 @@ Tyk---An open source, lightweight, fast and scalable API Gateway
 
 \chapter{Cases studies}
 
-As part of this thesis, we have evaluated three systems for find potential usages for API gateways. The goal was to look at all systems from different point of views so if two systems had common problems, then it would only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
+Three systems was evaluated in order to find potential usage areas for API gateways in real-world products. The goal was to look the three systems from different view points---when two systems has common problems, then it will only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
 
 \section{Streamflow}
-Streamflow\cite{streamflow} is a system used in municipalities to communicate with its citizens and organisations to communicate with their customers. It is used to register and track customer cases and works as a central case management hub.
+Streamflow\cite{streamflow} is a system used within municipalities in order to communicate with its citizens and inside organisations to communicate with their customers. It is primarily used to register and track customer cases and works as a central case management hub.
 
-Streamflow has an HATEOAS API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing, but a new web-client written using AngularJS is currently under development. The following case study has used the in-development AngularJS client using the existing production API which uses HTTP/1.1.
+Streamflow exposes a HATEOAS API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing---however, a new web-client written using AngularJS is currently under development. The following case study has used the in-development AngularJS client using the existing production API which uses HTTP/1.1.
 
 \subsection{Case lists}
-In Streamflow, incoming cases are categorised automatically by the rules implemented for the municipality or organisation. Each category has two folders: \enquote{inbox} and \enquote{my cases}. When clicking \enquote{inbox} or \enquote{my cases} for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
+In Streamflow, incoming cases are automatically categorised according to the rules defined by the municipality or organisation. Each category has two folders: \enquote{inbox} and \enquote{my cases}. When clicking on the \enquote{inbox} or \enquote{my cases} for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
 
 \subsection{Evaluation}
-When requesting the case list, several recursive requests will be executed from the client in order to collect all required information and follow the HATEOAS specification (the first steps in the request chain has been omitted):
+When viewing the case list, several recursive requests will be executed from the client in order to collect all the required information and to follow the HATEOAS specification (the first steps in the request chain has been omitted):
 
 \begin{enumerate}
-	\item Request a list of all cases in the selected category and folder. This will return a list of case-objects which are 0.9 KB per object.
-	\item For each case in the list, request the case information. This will return the same case-object once more. The reason for executing this request is to discover the next hypermedia resource called general. The wanted payload, the \enquote{general} resource, is 94 bytes while the total response is 3.5 - 4 KB. This results in a overhead with roughly 97.5\% of unnecessary data for each request.
-	\item Request the \enquote{general} resource for each case. From this response, the client wants two fields: a date and a note. If a priority is present, the client also wants the next resource called priorities. The total response is 1.5 - 2 KB and the wanted data is 130 B resulting in a unwanted overhead of roughly 92.5\% for each request.
-	\item If the cases has a defined priority, that priority has to be requested. This response is 293 B and will contain information about all priority levels, usually four levels. Each case only has one priority which results in a 75\% overhead for each request.
+	\item Request a list of all cases in the selected category and folder. This will return a list of case-objects which are 0.9~KB per object.
+	\item For each case in the list, request the case information. This will return the same case-object once more. The reason for executing this request is to discover the next hypermedia resource called \enquote{general}. The wanted payload, the \enquote{general} resource, is 94~bytes while the total response is 3.5--4~KB. This results in a overhead of roughly 97.5\% unnecessary data for each request.
+	\item Request the \enquote{general} resource for each case. From this response, the client wants two fields: a date and a note. If a priority is present, the client also wants the next resource called priorities. The total response is 1.5--2~KB and the wanted data is 130~B resulting in a unwanted overhead of roughly 92.5\% for each request.
+	\item If the cases has a defined priority, that priority has to be requested. This response is 293~B and will contain information about all priority levels, usually four levels. Each case only has one priority which results in a 75\% overhead for each request.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -965,16 +965,16 @@ When requesting the case list, several recursive requests will be executed from 
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/streamflow_cases.png}
     \end{center}
-  \caption{How the recursive requests are executed in the Streamflow web-client to fetch all needed resources and comply with HATEOAS.}
+  \caption{How the recursive requests are executed in the Streamflow web client in order to fetch all needed resources and comply with HATEOAS in the REST architectural specification.}
 \end{figure}
 
-By placing an API gateway written with CrocodilePear in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated for the client to one request with one response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
+By placing an API gateway written with CrocodilePear in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated, for the client, to one request with a single response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
 
-In the test environment, measurements where made on a list which contained 156 cases. For this list, the client had to execute 373 requests (1 request for the list, 156 requests for each case to get the location of the general resource, 156 requests for the general resource for each case, and 60 priority requests for the cases which needed that information). All these request where replaced with one single request to the API gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%, from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100 KB to 159 KB - a 86\% decrease of transmitted data.
+In the test environment, measurements where made on a list which contained 156 cases. For this list, the client had to execute 373 requests---1 request for the list, 156 requests for each case to get the location of the \enquote{general} resource, 156 requests for the \enquote{general} resource for each case, and 60 \enquote{priority} requests for the cases which needed that information. All these request where replaced with one single request to the API gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%---from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100~KB to 159~KB---a 86\% decrease of transmitted data.
 
-The Streamflow API also doesn't compress the responses. By adding a gzip compression to the payload inside the API gateway before responding to the client, the data could be reduced even more, from 1,100 KB to 9.9 KB, which amounts to a 99\% decrease of transmitted data!
+The Streamflow API does not compress any of the responses. By adding Gzip compression to the payload inside the API gateway before responding to the client, the data could be reduced even more, from 1,100~KB to 9.9~KB, which amounts to a 99\% decrease of transmitted data.
 
-In addition, the client transformed certain data types after retrieving it from the server so that it would fit in its internal model. For example, the field \enquote{dueOn} was truncated from \enquote{2015-02-17T23:59:59.000Z} to \enquote{2015-02-17} since the time was not relevant for the client. By utilising the API gateway, these transformations could be taken care of before replying to the client. This means that no, potentially demanding and error prone, transformations had to be done on the client --- instead the data could be used directly from the response.
+In addition, the client also had to transform certain data types after retrieving them from the server so that it would fit in its internal model. For example, the field \enquote{dueOn} was truncated from \enquote{2015-02-17T23:59:59.000Z} to \enquote{2015-02-17} since the time part was not relevant for the client. By utilising the API gateway, these transformations could be taken care of before replying to the client. This means that no, potentially demanding and error prone, transformations had to be performed on the client---instead the data from the response could be used directly.
 
 \begin{figure}[H]
   \centering
@@ -984,41 +984,40 @@ In addition, the client transformed certain data types after retrieving it from 
   \caption{Illustration of the responses (case, general and priorities) from Streamflow. The actual data needed in the list view is highlighted.}
 \end{figure}
 
-In the production environment, a measurement was made to determine the number of cases in the municipality of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes where 19 and the maximum number of cases in one inbox where 296. This means that on average, the number of requests performed, every time an inbox is checked from the client, is roughly 40 - 60. When the largest inbox is viewed, the number of requests will be somewhere between 600 - 900 --- every time it is clicked. This is a substantial bottleneck for browsers on the HTTP/1.1 stack when looking at the TCP max-connection limit and various textual overheads.
+In the production environment, a measurement was made to determine the number of cases present in the municipality of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes was 19 and the maximum number of cases in one inbox was 296. This means that on average, the number of requests performed, every time an inbox is checked from the client, is roughly 40--60. When the largest inbox is viewed, the number of requests will be somewhere between 600--900---every time it is clicked. This is a substantial performance bottleneck for all clients, especially browsers using HTTP/1.1 considering the TCP max-connection limit and the various textual overheads.
 
-It should be noted that the final version of the web-client will most likely be limited to displaying 10 - 20 cases at a time using pagination. This would reduce the number of requests to 20 - 60 for any given inbox view. This is however still a substantial amount of HTTP requests to perform every time a user checks an inbox. This approach will neither address the problem that 86\% of the transferred data is unnecessary overhead.
+Lastly, it should be noted that the final version of the web-client will most likely be limited to displaying 10--20 cases at a time using pagination. This would reduce the number of requests to 20--60 for any given inbox view. This is however still a substantial amount of HTTP requests to perform every time a user checks an inbox. This approach will neither address the problem that 86\% of the transferred data is unnecessary overhead.
 
-\newpage
 \section{Bank App}
-The second system CrocodilePear was test on was a bank app for an undisclosed major bank in Sweden, here after just called \textit{Bank App}. The Bank App is a mobile app which has clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a good API from the start with a design that suited the clients needs. Further on, the clients where written as a hybrid app where common web technologies could be shared among the different platforms with a small amount of native components.
+The second system CrocodilePear was evaluated with was a banking app for an undisclosed major bank in Sweden, here after simply called \enquote{Bank App}. Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a modern and well design API from the start with a design that suited the clients needs. Further on, the clients where written as hybrid apps where common web technologies could be shared among the different platforms and only a small amount of native components had to be changed.
 
 \subsection{Transaction overview}
-An essential part of the application is the transaction overview which is where the users can look at their balance, orders, fund orders, trades and transactions.
+An essential part of the application is the transaction overview which is where the users can view their balance, orders, fund orders, trades and transactions.
 
-When the transaction overview screen is loaded, the client uses promises (asynchronous computations) to collect and transform the results from the different API end-points. The results are then bound to the scope variable which will make sure that the information is rendered in the view.
+When the transaction overview screen is loaded, the client uses promises (asynchronous computations) to collect and transform the results from the different back-end API end-points. The results are then bound to the scope variable which in turn makes sure that the information is rendered in the view.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/bank_overview.png}
     \end{center}
-  \caption{How the asynchronous calls to the API and transformation works. There are two places where the code waits for previous computations.}
+  \caption{How the asynchronous calls to the API and the transformation works. There are two places where the code waits for previous computations before continuing.}
 \end{figure}
 
-To load the required data, the initial account information has to be fetched first. Using that response, the client will then load the account information, orders, fund orders and trades for that account. The client then waits for the four requests to respond, perform some transformations to the data and then merge the it with capital and transactions data so that the fetched information fits the clients data model.
+To load the required data, the initial account information has to be fetched first. Using that response, the client will then load the account information, orders, fund orders and trades for that account. The client then waits for the four requests to respond, perform some transformations to the data and then merge the it with capital and transactions data so that the fetched information fits the clients internal data model.
 
 \subsection{Evaluation}
-All in all, the client requests data from five different API end-points and uses about twice as many functions to fetch and transform these results. Since the requests are less than six in the transaction overview, it will have no problem with the TCP-connection limit.
+All in all, the client requests data from five different API end-points and uses about twice as many functions to fetch and transform these results in the transaction overview. Since the requests are less than six in the transaction overview, it will have no problem with the TCP-connection limit.
 
-The data served from the API only had a small amount of information which the client discarded and so the data transfer before and after the introduction of the gateway was almost identical --- about 1 KB less after the introduction of the API gateway.
+The data served from the API only had a small amount of information which the client discarded and so the data transfer before and after the introduction of the gateway was almost identical---about 1 KB less after the introduction of the API gateway.
 
 It is possible that the overhead of unnecessary data can differ from customer to customer. One example of this is the fact that the API sends all of the customer's accounts, including inactive accounts, but the client is only interesting in the active accounts. It is however hard to argue that this amount of overhead is so substantial that it will cause performance issues.
 
 One thing that made the Bank App special is that the different mobile platforms shared a common code base for the overview screen. This meant that iOS, Android and Windows Phone could utilise the same JavaScript code for transforming, filtering and sorting the requested data.
 
-If the Bank App instead was developed by using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1 - 25 errors per 1000 lines of code\cite{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1 - 2.5 new bugs --- a number which could be reduced if the code only had to be written once in the API gateway instead.
+If the Bank App instead was developed by using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1--25 errors per 1000 lines of code\cite{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1--2.5 new bugs---a number which could be reduced if the code only had to be written once in the API gateway instead.
 
-Perhaps more importantly, by moving the code to the API gateway means that the combined codebase would not just be less error prone but also more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API gateway and avoid updating every client. 
+Perhaps more importantly, by moving the code to the API gateway means that the combined codebase would not just be less error prone but would also be more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API gateway and avoid updating every client. 
 
 If this code instead was located in the clients, all of them had to be updated individually, probably by different teams, and submitted to the various app stores for a potentially long review process.
 
@@ -1026,13 +1025,13 @@ Having different code bases for common tasks in the clients would also increase 
 
 In the end, the code in the client to perform these requests and transform the results amounted to roughly 100 lines of code and the corresponding end-point in the API gateway amounted to roughly the same amount of lines.
 
-It is hard to argue for the inclusion of an API gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API gateway can increase over time if the API isn't moving as fast or is as flexible so that it will meet the clients needs. It is also possible that new clients are introduced, clients move to native code bases or fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API gateway will not provide any substantial gain.
+It is hard to argue for the inclusion of an API gateway in the current state of this project based on the facts that the Bank App already has a shared cross-platform code base and a well suited API with mostly optimised end-points. One can imagine that the need for an API gateway can increase over time if the API is not moving as fast enough or is as flexible as desired and therefore can not meet the clients needs. It is also a possibility that new clients will be introduced later on, clients move to native code bases instead of hybrid technologies or that they will fork the existing cross-platform code base. However, in the current state of the project, the inclusion of an API gateway will not provide any substantial gain.
 
-\chapter{Accountant System}
+\section{Accountant System}
 
 Accountant System is a code name for a system used by a large Swedish accountant firm to help them keep track of important documents, tasks and priorities. The client is a single-page web application written in AngularJS which uses an existing legacy back-end API. The back-end API communicates entirely with XML-encoded messages over HTTP --- but the client only works with JSON internally. Working with JSON in web applications can be considered very beneficial since JSON and its syntax is a subset of the JavaScript language. JSON support is also included in the ECMAScript standard, which JavaScript implements, since version 5\cite{ecmascript_5}, which enables easy (de)serialisation of JavaScript objects to JSON.
 
-\section{Working with XML in JSON clients}
+\subsection{Working with XML in JSON clients}
 \label{xml_json}
 
 When it comes to conversion from XML to JSON, and vice versa, there is no standard which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
@@ -1102,14 +1101,14 @@ To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} whi
 
 In the end --- the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
 
-\section{Translating XML APIs}
+\subsection{Translating XML APIs}
 In XMLThing, the XML-JSON conversion was handled in two different ways --- one way for requests and one for responses.
 
-\subsection{Response}
+\subsubsection{Response}
 
 When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which could then be used as JavaScript objects in the views, often after some transformations. As with previous examples, this adds additional complexity to the client which has to transform the responses before they can be properly handled by the client.
 
-\subsection{Request}
+\subsubsection{Request}
 What is more interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT and DELETE which indicates how the resource should be manipulated. Secondly, we have an end-point which is we communicate with over a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
 
 In the case of XMLThing, we can look at the simplest scenario which is saving a note. To do this, the client has to send the following XML-data to the back-end:
@@ -1161,7 +1160,7 @@ To avoid having to maintain a collection of XML-template in each client, we can 
   \caption{The API gateway maintains a list of XML-templates so the client can communicate to the back-end without them.}
 \end{figure}
 
-\section{Evaluation}
+\subsection{Evaluation}
 
 In the case of Accountant Software, we can see a decrease in bandwidth used when dropping the XML-format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP (Simple Object Access protocol) with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw a fair parallel with that study to this case study.
 
