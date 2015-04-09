@@ -17,7 +17,7 @@
 \lstset{ %
 %  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
   basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
-  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
   breaklines=true,                 % sets automatic line breaking
   captionpos=b,                    % sets the caption-position to bottom
 %  commentstyle=\color{mygreen},    % comment style
@@ -570,18 +570,22 @@ Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
 \chapter{CrocodilePear: API gateway framework}
 
-The prototype framework CrocodilePear was developed in order to understand and being able to rapidly develop custom API gateways. Existing API gateways mainly focus on expanding APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service). CrocodilePear's focus is on the other hand from a pure technical point of view with the goal to help developers create their own customised API gateways programatically with a high degree of freedom and a small amount of abstractions.
+The framework CrocodilePear was developed in order to better understand and be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focus on expanding existing APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service) with drag-and-drop graphical interfaces. 
 
-\section{Language \& Libraries}
+CrocodilePear's focus, on the other hand, is from a pure technical point of view. The goal is to help developers create their own customised API gateways programatically with a high degree of freedom and a small amount of abstractions which otherwise could limit the use cases. CrocodilePear strives to be very flexible and let the developers create their own custom solutions in any way they see fit.
+
+\section{Technologies: language and libraries}
 \subsection{Elixir}
-Elixir is a functional language designed for building scalable and maintainable applications on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. Properties all of which are important for a successful API gateway implementation.
+Elixir is a functional language designed for building scalable and maintainable applications which run on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. Properties all of which are important when developing a successful API gateway.
 
-Two other important influences for choosing Elixir in this prototype are the pipe operator and the asynchronicity achieved by utilising Elixir processes.
+Two other important influences for choosing Elixir in this framework is the pipe operator and the asynchronous model achieved by utilising Elixir processes.
 
 \subsection{The pipe operator}
-One of the integral parts of Elixir is the pipe operator: $|>$. The pipe operator takes the output from the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: $|$.
+One of the integral parts of Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result of the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: \lstinline{|}.
 
-As an example, we can take a look at the following nested and hard to read code:
+\vspace{5mm}
+
+\noindent As an example, we can take a look at the following nested and hard to read code:
 
 \begin{figure}[H]
   \centering
@@ -589,50 +593,51 @@ As an example, we can take a look at the following nested and hard to read code:
 Enum.sum(Enum.filter(Enum.map(1..100_000, &(&1 * 3)), odd?))
 \end{lstlisting}
   \caption{Elixir code written without the pipe operator.}
+  \label{fig:no_pipe}
 \end{figure}
 
-The code from the figure above can be rewritten using the pipe operator which results in a more easily read version:
+\noindent The code from the figure above can be rewritten using the pipe operator which results in a more easily read version:
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{The same code as in the previous figure but written with the pipe operator.}
+  \caption{The same code as seen in Figure~\ref{fig:no_pipe} but written with the pipe operator.}
 \end{figure}
 
-This also has the good side-effect that ti makes you reason about the code in a better way. When you read it, you might say something like: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}.
+Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say something like: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which is then reflected in how the code is written.
 
-The pipe operator is an important part in how CrocodilePear works, as it pipes requests to a result, potentially through transformations along the way. This makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) for exposing endpoints and piping requests to the client.
+The pipe operator is an important part in how CrocodilePear works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, this makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the client.
 
 \subsection{Elixir processes}
-Processes are Elixir's term for utilising the Actors model as its concurrency model. In Elixir, processes are extremely lightweight (compared to operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
+Processes are Elixir's term for utilising the \enquote{Actors model} as its concurrency model. In Elixir, processes are extremely lightweight (in comparison with operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications - and works as connection adapters for different web servers in the Erlang VM\cite{plug}. In CrocodilePear, Plug is utilised for exposing end-points to the clients to which they can send requests, and a way for the API gateway to send responses back over HTTP to the clients.
+Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In CrocodilePear, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol.
 
 \subsection{HTTPoison}
-Internally, CrocodilePear uses HTTPoison\cite{httpoison}. It is based on hackney\cite{hackney}, and it is used to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away to simplify the API gateway development and ensure that it can be removed or replaced in the future.
+Internally, CrocodilePear uses HTTPoison\cite{httpoison}. It is based on on the Erlang project Hackney\cite{hackney}, and it is utilised to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away from the framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
 
 \section{High-level concept}
 
-\subsection{Data}
-The data used in CrocodilePear corresponds to that of an HTTP request. It consists of a numeric HTTP code, such as 200 for OK, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body - not to be confused with the HTML body-tag. 
+\subsection{Data structure}
+The data structure used in CrocodilePear corresponds to that of an HTTP request. It consists of a numeric HTTP status code, such as 200 for OK\cite{http_status_codes}, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body (not to be confused with the HTML body-tag).
 
-In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves.
+In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves but utilised inside CrocodilePear.
 
-\subsection{Processes: producers \& consumers}
-The key component in CrocodilePear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its identity and a status telling the producer that it is ready to receive.
+\subsection{Processes: producers and consumers}
+The key component in CrocodilePear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its own identity and a status telling the producer that the consumer is ready to receive.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
 send(producer, { self, :ready })	
 \end{lstlisting}
-  \caption{The consumer sends a tuple with status \enquote{ready} and the identity of itself, using the function self(), to the producer when it is ready to receive data.}
+  \caption{The consumer sends a tuple with status \enquote{ready} and the identity of itself, using the function \lstinline{self()}, to the producer when it is ready to receive data.}
 \end{figure}
 
-The identity of the producer is always known to the consumer via an Elixir PID, process identification, which is passed around in the pipeline (explained below). The producer will only produce a response once and will terminate after a consumer has consumed the response.
+The identity of the producer is always known to the consumer via an Elixir PID (process identification) which is passed around in the pipeline---the pipeline is explained below. The producer will only produce a response once and will terminate after a consumer has fully consumed the response.
 
 \begin{figure}[H]
   \centering
@@ -642,27 +647,27 @@ The identity of the producer is always known to the consumer via an Elixir PID, 
   \caption{Message passing between a producer and a consumer. Time flows from left to right.}
 \end{figure}
 
-After the producer has been notified that a consumer is ready to consume its data, it must first respond with the status, the headers and the meta data. After that, the chunks must be sent in order. Finally, a done message is sent indicating that the producer will terminate and all chunks have been sent.
+After the producer has been notified that a consumer is ready to consume its data, it must first respond with a message containing the HTTP status code, the headers- and the meta data map. After that, the payload chunks must be sent in order. Finally, a \enquote{done} message is sent indicating that the producer will terminate and all chunks has been sent.
 
-All Elixir processes, the consumers and producers, are abstracted away from the end-user of the framework. Instead, the end-user only works with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has in practice no performance penalty while it does makes the development a whole lot easier. There is, however, nothing that hinders a developer to work on the lower process level if that for some reason is wanted.
+All Elixir processes, with the consumers and producers, are abstracted away from the user of the framework. Instead, the end-user only interacts with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has no performance penalty while it does make the development a whole lot easier since the developer does not have to worry about the message passing. There is however nothing that hinders a developer to work on the lower process level if that for some reason is desired.
 
 \section{Pipeline}
 The pipeline is what ties all pieces in CrocodilePear together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
 
-The two exceptions are the functions $request$ and $response$ which normally are the beginning and the end of each pipeline. It is also possible to mix a CrocodilePear pipeline with a normal function pipeline in Elixir, this is explored further in the examples below.
+The two exceptions are the functions \lstinline{request} and \lstinline{response} which usually are the beginning and the end of each pipeline. It is also possible to mix a CrocodilePear pipeline with a normal function pipeline in Elixir---this is explored further in the examples below.
 
 \subsection{Request}
-The $request$ function in CrocodilePear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP method GET, POST and so on. The $request$ will always return a list of producer PIDs. Each producer will produce the response from one HTTP request from the specified URL.
+The \lstinline{request} function in CrocodilePear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP methods such as GET, POST and so forth. The \lstinline{request} function will always return a list of producer PIDs. Each producer will produce the response from one HTTP request for the specified URL.
 
 \subsection{Response}
-The $response$ function takes a list of producers and turns them in to an HTTP response by utilising the provided $conn$ in $Plug$. If more than one producer is passed to the $response$ function, the first responding producer will be consumed first which means that the response order is not deterministic --- if not explicitly defined so. However, the first responding producer will be consumed fully before any other producer is consumed which guarantees that the chunks will not be mixed together.
+The \lstinline{response} function takes a list of producers and turns them in to an actual HTTP response by utilising the provided data structure \lstinline{conn} in the library \lstinline{Plug}. If more than one producer is passed to the \lstinline{response} function, the first responding producer will be consumed first which means that the response order is nondeterministic---if not explicitly defined otherwise. However, the first responding producer will be consumed entirely before any other producer is consumed which guarantees that the chunks from different responses will not be mixed together.
 
-As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response.
+As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response. CrocodilePear only uses chunked responses which all HTTP/1.1 conforming clients must be able to handle\cite{chunked_required}. Note however that synchronous non-chunking requests, which can be made XMLHttpRequests in JavaScript, will still be able to handle the responses---the only exception is that they will not be able to gain any benefit from the chunking, but there is no downside either.
 
 \subsection{Transformers}
-Transformers are a concept used in CrocodilePear to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model.
+Transformers is a concept used in CrocodilePear to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
 
-The transformer function takes a lambda function as its only parameter. This lambda is called with the response map, as soon as its available, as its only parameter and allows transformations to take place.
+The transformer function takes a lambda function (a higher order function) as its only parameter. The lambda function is called with the response data structure as soon as its available as its only parameter which allows transformations to take place.
 
 \begin{figure}[H]
   \centering
@@ -675,11 +680,11 @@ blanker = fn(response) ->
   |> Dict.update!(:meta, fn(_discarded_meta) -> %{} end)
 end
 \end{lstlisting}
-  \caption{The function blanker is a simple lambda function which can be used in a transformer. It sets the status to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing corresponding empty values instead. The actual data in status, headers and body are discarded by using an underscore at the start of the function call in Dict.update!.}
+  \caption{The function blanker is a simple lambda function which can be used inside the transformer function. It sets the HTTP status code to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing corresponding empty values instead. The actual data in the status, headers, meta and body are discarded by using an underscore at the start of the variable name in the function call \lstinline{Dict.update!}.}
 \end{figure}
 
 \subsection{Timers}
-CrocodilePear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output data to the default logger. The timers also work with the underlying concurrency model which means that every single chunk in from any of the processes can be timed individually.
+CrocodilePear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message in any of the asynchronous processes can be timed individually.
 
 \begin{figure}[H]
   \centering
@@ -697,13 +702,13 @@ CrocodilePear include timers which can be placed anywhere in the pipeline to ben
 10:41:59.544 [info]  {1424, 252519, 543943} [done] (Added transform function) on #PID<0.431.0>
 10:41:59.544 [info]  {1424, 252519, 544106} (Responded to query)
 \end{lstlisting}
-  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \{MegaSecs, Secs, Microsecs\}, [message atom] optional message (producer PID if present).}
+  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \lstinline{\{MegaSecs, Secs, Microsecs\}}, [message atom] optional message (producer PID if present).}
 \end{figure}
 
 \subsection{Concatenate JSON}
-The function $concatenate\_json$ takes a list of producers, consumes them and returns a new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data. The order is determined based on which producer starts responding first.
+The function \lstinline{concatenate_json} takes a list with an arbitrary number of producers, consumes them and returns one new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data. The order is determined based on which producer starts responding first---just like it is in the \lstinline{response} function.
 
-Each item in the list will be a JSON-object containing the four keys: status, headers, meta and body (payload). Optionally, if a \enquote{true} value is passed in to the function, each item in the list will be only the \enquote{body} (payload) with the headers, meta and status omitted.
+Each item in the list will be a JSON object which has four keys: status, headers, meta and body (payload). Optionally, if a \enquote{true} value is passed in to the function, each item in the list only contain the \enquote{body} (payload)---the headers, meta and status will be discarded.
 
 
 \begin{figure}[H]
@@ -711,14 +716,14 @@ Each item in the list will be a JSON-object containing the four keys: status, he
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/crocpear_concatenate_json.png}
     \end{center}
-  \caption{Concatenate JSON creates one consumer for each producer. As soon as one consumer has consumed an entire response, the new producer will send that as a chunk in JSON format.}
+  \caption{Concatenate JSON creates one internal consumer for each producer. As soon as one consumer has consumed an entire response, the new producer will send that data as a chunk in the appropriate JSON format.}
 \end{figure}
 
-Even though $concatenate\_json$ takes an arbitrary number of producer PIDs as its argument, it will itself only return one new producer as its result is one JSON list object.
+Even though \lstinline{concatenate_json} takes an arbitrary number of producer PIDs as its argument, it will itself only return one new producer as its result is one JSON list object.
 
 \section{Examples}
 \subsection{Request proxying}
-A simple proxy is a good introduction example which demonstrates how the request / response pipeline can be used. In this example, we extract an URI from the query string in the connection and pipe it to the $request$ function which in turn is piped into the $response$ function.
+A simple proxy is a good introduction to demonstrates how the request / response pipeline can be utilised. In this example, we extract an URL from the query string from the connection and pipe it to the \lstinline{request} function which itself is piped into the \lstinline{response} function.
 
 \begin{figure}[H]
   \centering
@@ -727,10 +732,10 @@ conn.query_string
 |> request
 |> response(conn)
 \end{lstlisting}
-  \caption{A simple proxy.}
+  \caption{A very simple proxy.}
 \end{figure}
 
-In a similar fashion, we could take an arbitrary number of requests and proxy them into one result. Here we take several URIs from the query string, separated by the character \enquote{|} and pipe them in to the $request$ and $response$ functions as before. By using Elixirs String.split, a list of strings is created which is passed into the $request$ function.
+In a similar fashion, we could take an arbitrary number of requests and proxy all of them into one result. Here we take several URLs from the query string separated by the character \lstinline{|} and pipe all of them in to the \lstinline{request} and \lstinline{response} functions as before. By utilising Elixir's \lstinline{String.split}, a list of strings is created which is then passed into the \lstinline{request} function.
 
 \begin{figure}[H]
   \centering
@@ -739,13 +744,13 @@ String.split(conn.query_string, "|")
 |> request
 |> response(conn)
 \end{lstlisting}
-  \caption{A simple proxy for an arbitrary number of URIs.}
+  \caption{A simple proxy which works with an arbitrary number of URLs.}
 \end{figure}
 
-This will execute all requests concurrently and start responding, in indeterministic order, based on which of the requests is responding first.
+This pipeline execute all the requests concurrently and start responding, in nondeterministic order, based on which one of the requests is responding first.
 
 \subsection{Concatenate responses to JSON}
-The concatenate\_json function can be used to concatenate several requests into a JSON list object. It will also set the \enquote{Content-Type} header to the appropriate \enquote{application/json}.
+The \lstinline{concatenate_json} function can be used to concatenate several requests into one JSON list object. It will also automatically set the \enquote{Content-Type} header to the appropriate format \enquote{application/json}.
 
 \begin{figure}[H]
   \centering
@@ -758,10 +763,10 @@ String.split(conn.query_string, "|")
   \caption{Demonstration of the concatenate\_json function.}
 \end{figure}
 
-The response will be one JSON list where each item  in the list contains the response's status, headers, meta and payload as an JSON objects.
+The response will be one JSON list where each item in the list contains the response's status, headers, meta data and the payload as an individual JSON objects.
 
 \subsection{Transformers}
-In this more complex example, we will use all previously explained techniques along with a transformer to create a more powerful end-point. We will go over the code in the following figure line by line.
+In this more complex example, we will use all the previously explained techniques along with a \lstinline{transform} function to create a much more powerful end-point. We will go over the code from the Figure~\ref{fig:code_transformer} line by line.
 
 \begin{figure}[H]
   \centering
@@ -788,20 +793,21 @@ get "/temperature" do
 end
 \end{lstlisting}
   \caption{A complex example with a transformer.}
+  \label{fig:code_transformer}
 \end{figure}
 
-On line 1, we expose the new end-point /temperature from the API gateway on which we'll wait for GET requests.
+On line 1, we expose the new end-point \lstinline{/temperature} from the API gateway on which we will listen for incoming GET requests.
 
-On line 2 - 4, we intercept cities and country codes, such as \enquote{Lund,SE|Copenhagen,DK}, from the query string sent through the connection and then split them in to a list using the separating character: $|$. This list is then mapped over which will create the appropriate URLs to call for the underlying API which we will use in this example.
+On line 2--4, we intercept the city names and country codes, such as \enquote{Lund,SE|Copenhagen,DK}, from the query string which is sent with the connection and then split them in to a list using the separating character: \lstinline{|}. This list is then mapped over which will result in the appropriate URLs to call for the underlying back-end API which we will use in this example.
 
-On line 6 - 13, we create a new transformer lambda function. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data types using the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again - the rest of the payload data is discarded. The other response data: status, headers and meta, will be left intact since our function only updates the data stored within they key :body.
+On line 6--13, we create a new transformer lambda function called \lstinline{temperature_extractor}. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data structures by utilising the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again---the rest of the payload data is discarded. The other response data: status, headers and meta, will be kept intact since our function only updates the data stored within they key \lstinline{:body}.
 
-On line 15 - 19, we tie everything together using the pipeline. We take the URIs, pipe them into a request, pipe the request in to a transformer with our new function temperature\_extractor, pipe that in to the concatenate\_json function and pipe that to the response.
+On line 15--19, we tie everything together by creating a new pipeline. We take the URLs, pipe them into the \lstinline{request} function, pipe the result from the \lstinline{request} function in to the \lstinline{transform} function with our new lambda function \lstinline{temperature_extractor}, pipe the result from \lstinline{transform} in to the \lstinline{concatenate_json} function and finally pipe the result to the \lstinline{response} function which will respond to the client.
 
-In this example, we have used request/response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
+In this example, we have used the performance enhancing techniques request/response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
 
 \subsection{Timers}
-Timers can be used anywhere in the pipeline to output timed logger information.
+Timers can be used anywhere in the pipeline to output timed logger information. In this example, we use the pipeline from the previous example and attach labels to all the timer functions in order to be able to separate them in the output.
 
 \begin{figure}[H]
   \centering
@@ -820,7 +826,7 @@ uris
   \caption{Utilising timers in the pipeline.}
 \end{figure}
 
-The logger for this pipeline would produce an output similar to:
+\noindent The logger for this pipeline would produce an output similar to:
 
 \begin{figure}[H]
   \centering
@@ -844,9 +850,9 @@ The logger for this pipeline would produce an output similar to:
 \end{figure}
 
 \subsection{Simple authentication}
-While security is mostly outside the scope of this text (see page~\pageref{sec:security}), a small example was created to illustrate how a simple security mechanism can work within CrocodilePear.
+While security is at large outside the scope of this thesis (see page~\pageref{sec:security}), a small example was created to illustrate how a very simple security mechanism can work within CrocodilePear.
 
-In this example, a username and password is retrieved from the URL --- note that this is a not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we specify a HTTP Basic Auth header with a valid username and password to authenticate with the back-end system.
+In this example, a username and password is retrieved from the URL---note that this is a not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we create a new \enquote{HTTP Basic Auth} header with a predefined valid username and password (administrator / administrator) which we will use to authenticate ourselves with to back-end system.
 
 What this illustrates is that we can have different credentials for the API gateway and the back-end APIs. CrocodilePear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
 
@@ -866,11 +872,11 @@ get "/http-basic-auth/:user/:password" do
   |> response(conn)
 end
 \end{lstlisting}
-  \caption{Simple authentication example.}
+  \caption{Simple authentication example---not to be used in practice.}
 \end{figure}
 
 \subsection{Caching}
-Response caching can be added to CrocodilePear. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the request-function with a request\_cache-function or we can do a cache outside the pipeline. 
+Response caching can be added to CrocodilePear. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the \lstinline{request} function with a new \lstinline{request_cache} function or we can do the caching outside the pipeline. 
 
 \begin{figure}[H]
   \centering
@@ -882,10 +888,10 @@ get "/proxy/multi/concat-json/cache" do
   |> response(conn)
 end
 \end{lstlisting}
-  \caption{Individual requests are cached independently of each other with the substitute function request\_cache.}
+  \caption{Individual requests are cached independently of each other with the substitute function \lstinline{request_cache}.}
 \end{figure}
 
-If we add the new substitute function request\_cache, it can cache the requested URLs independent of each other. This means that if we have 50\% of the requests cached, we only have to perform the remaining 50\% requests. The draw-back with this approach is that only the \enquote{raw} responses are cached which means that if we are doing any transformations in the pipeline, these will be performed on all results --- including cached responses. One has to determine if the overhead of these computations are negligible or if another approach has to be taken.
+The new substitute function \lstinline{request_cache} can cache the requested URLs independent of each other. This means that if we have 50\% of the requests cached, we only have to perform the remaining 50\% requests. The draw-back with this approach is that only the \enquote{raw} responses from the back-end APIs are cached. This means that if we are doing any kind of transformations inside the pipeline, these will be performed on all results---including cached responses. One has to determine if these computations are negligible or if another caching approach has to be taken.
 
 \begin{figure}[H]
   \centering
@@ -907,12 +913,14 @@ end
   \caption{Pseudo-code illustrating how an entire response can be cached.}
 \end{figure}
 
-The second approach is to add the response to the cache right before it is sent to the client. This means that all the computations and transformations are cached so they don't have to be executed again. The draw-back with this approach is that the entire response is cached as one, meaning that if an end-point does 100 parallel requests where only one request differs, all requests has to be re-added to the cache for every tiny change.
+The second approach is to add the response to the cache right before it is sent to the client. This means that not only is the back-end API requests cached but all the computations and transformations as well. This means that the computations does not have to be executed again which was the case in the previous example. The draw-back with this approach is that the entire response is cached as one entity which means that if an end-point does 100 parallel requests where only one request differs, all requests has to be re-added to the cache for every change.
 
-Both these approaches are a bit naive and there are many things which has to be considered before implementing a caching solution in a real world example such as how long responses should be cached and whether the client should be able to invalidate a cached item and so on. In addition to this, one can imaging using the cache only when certain back-end requests are down of if a request is failing for any reason. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can't be covered in this thesis.
+Both these proof-of-concept approaches are naive and there are many things which has to be considered before implementing a caching solution in a real world product such as how long responses should be cached and whether the client should be able to invalidate a cached item and so forth. 
+
+In addition to this, the cache can also be used as a fail over solution where the cache is only used when a back-end server is down or if a request is failing for any reason such as a network failure. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can not be covered in this thesis.
 
 \section{Related works}
-Tyk - An open source, lightweight, fast and scalable API Gateway
+Tyk---An open source, lightweight, fast and scalable API Gateway
 
 \noindent \url{https://tyk.io/}
 
