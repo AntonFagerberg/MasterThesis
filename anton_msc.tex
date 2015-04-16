@@ -73,9 +73,9 @@ I would like to thank Jayway AB for giving me the freedom and resources to freel
 }
 
 \theabstract{
-This thesis investigates the benefits and complications around working with API gateways in order to optimise the communication and interaction between clients and servers. We do this by examining the underlying protocol HTTP and the general theory regarding API gateways.
+This thesis investigates the benefits and complications around working with API gateways in order to optimise the communication and interaction between clients and servers. We do this by examining the underlying protocol HTTP/1.1 and the general theory regarding API gateways.
 
-An API gateway framework was developed to help further understanding some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to find problematic areas and solve them in real world production systems used in the industry.
+An API gateway framework was developed to help further understand some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to determine potential problematic areas and solve them in real world production systems.
 }
 
 \keywords{API, gateway, proxy, communication, optimisation, performance, HTTP}
@@ -1121,7 +1121,7 @@ In the case of Accountant System, we can look at the simplest scenario which is 
 \begin{lstlisting}[breaklines=true,frame=single]
 <SaveNotesRequest>
   <Notes>
-    <JPTEXTt>This is the actual note.</JPTEXT>
+    <JPTEXT>This is the actual note.</JPTEXT>
   </Notes>
 </SaveNotesRequest>
 \end{lstlisting}
