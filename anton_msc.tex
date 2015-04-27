@@ -308,7 +308,7 @@ As an example, arbitrary user data\footnote{\url{https://gist.github.com/AntonFa
 
 An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would have otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 222]{HPBN}.
 
-\section{Related works}
+\section{Further reading}
 High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media
 
 \begin{quote}
@@ -540,13 +540,15 @@ API gateways are in a perfect position to collect data that can be used for anal
 API gateways can be used as load balancers to distribute workloads across multiple back-end systems. This can be achieved by implementing different scheduling algorithms---either by doing a simple round-robin or by implementing a more complex algorithm which takes additional factors into account such as the back-end systems reported load, response time, geolocation and so forth.
 
 \section{Related works}
-Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
+
+\subsection{Netflix API}
+Netflix has applied a concept similar to API gateways where each client team develops their own end-points adapted to the client's specific need.
+
+\vspace{5mm}
+
+\noindent Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
 \noindent \url{http://techblog.netflix.com/2013/01/optimizing-netflix-api.html}
-
-\begin{quote}
-	Netflix has applied a concept similar to API gateways where each client team develops their own end-points adapted to the clients specific need.
-\end{quote}
 
 \vspace{5mm}
 
@@ -554,19 +556,15 @@ Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
 \noindent \url{http://www.infoq.com/news/2013/02/netflix-api-optimization}
 
-\begin{quote}
-	Further in-depth interview with Ben Christensen which is the author of the blog post mention above. The interview examines the architecture of Netflix approach to adapters in the API.
-\end{quote}
+
+\subsection{Managing API Performance, Apigee}
+Apigee does API tool development and has put together a collection of articles with focus on optimising API performance in common scenarios.
 
 \vspace{5mm}
 
 \noindent Managing API Performance, Apigee
 
 \noindent \url{http://apigee.com/docs/content/managing-api-performance}
-
-\begin{quote}
-	A collection of articles from the API company Apigee. The articles focus is on optimising API performance in many common scenarios which can be utilised in API gateways.
-\end{quote}
 
 \chapter{CrocodilePear: API gateway framework}
 
@@ -920,23 +918,21 @@ Both these proof-of-concept approaches are naive and there are many things which
 In addition to this, the cache can also be used as a fail over solution where the cache is only used when a back-end server is down or if a request is failing for any reason such as a network failure. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can not be covered in this thesis.
 
 \section{Related works}
-Tyk---An open source, lightweight, fast and scalable API Gateway
+\subsection{Tyk}
+
+Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like CrocodilePear, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful.
+
+\vspace{5mm}
 
 \noindent \url{https://tyk.io/}
 
-\begin{quote}
-	An open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it.
-\end{quote}
+\subsection{LoopBack-Gateway}
+
+LoopBack-Gateway is an experimental, minimum viable product, API gateway developed by StrongLoop. It is written in JavaScript using Node.js and focuses on rate limiting, reverse proxying and security.
 
 \vspace{5mm}
-\noindent LoopBack API Gateway
 
-\noindent \url{http://docs.strongloop.com/display/public/LB/LoopBack+API+Gateway}
-
-\begin{quote}
-	An API gateway developed by StrongLoop with focus on security, mediation and transformation, infrastructure QoS, monitoring and reporting, aggregation and visualisation. 
-\end{quote}
-
+\noindent \url{https://github.com/strongloop/loopback-gateway}
 
 \chapter{Cases studies}
 
