@@ -614,8 +614,8 @@ Processes are Elixir's term for utilising the \enquote{Actors model} as its conc
 \subsection{Plug}
 Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In CrocodilePear, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol.
 
-\subsection{HTTPoison}
-Internally, CrocodilePear uses HTTPoison\cite{httpoison}. It is based on on the Erlang project Hackney\cite{hackney}, and it is utilised to send HTTP requests to back-end systems. The HTTPoison library is only used internally and is therefore abstracted away from the framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
+\subsection{Hackney}
+Internally, CrocodilePear uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the CrocodilePear framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
 
 \section{High-level concept}
 
