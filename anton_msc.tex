@@ -8,11 +8,14 @@
 %\usepackage{makeidx}
 \usepackage{graphicx}
 \usepackage[titletoc, header, page]{appendix}
-\usepackage{hyperref}
+%\usepackage{hyperref}
 
 \usepackage{float}
 \usepackage{listings}
 \usepackage{csquotes}
+
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
 
 \lstset{ %
 %  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
@@ -63,6 +66,8 @@
 \acknowledgements{
 I would like to thank Jayway AB for giving me the freedom and resources to freely explore this topic. A big thank you to my supervisors Nils-Olof Bankell at Jayway and Roger Henriksson at Lund University for all their help during this process. Thank you Görel Hedin for being the examiner on this master thesis.
 
+TODO add rest...
+
 \vspace{5mm}
 
 %\noindent Thank you X, Y \& Z for proof reading this thesis and providing many helpful insights. A big thanks to the developers of Elixir and the tools around it, especially Plug, which made the development process a pleasure.
@@ -73,9 +78,9 @@ I would like to thank Jayway AB for giving me the freedom and resources to freel
 }
 
 \theabstract{
-This thesis investigates the benefits and complications around working with API gateways in order to optimise the communication and interaction between clients and servers. We do this by examining the underlying protocol HTTP/1.1 and the general theory regarding API gateways.
+This thesis investigates the benefits and complications around working with API gateways. When we say API gateway, we mean to proxy and potentially enhance the communication between servers and HTTP clients, such as browsers, by transforming the data. We do this by examining the underlying protocol HTTP/1.1 and the general theory regarding API gateways.
 
-An API gateway framework was developed to help further understand some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to determine potential problematic areas and solve them in real world production systems.
+An API gateway framework was developed to help further understand some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to determine potential problematic areas and solve them in real world production systems. We could from these results see that the benefits of an API gateway varied from case to case, and with results in hand, predict in which scenarios API gateways are benefitial.
 }
 
 \keywords{API, gateway, proxy, communication, optimisation, performance, HTTP}
@@ -91,7 +96,7 @@ An API gateway framework was developed to help further understand some of the co
 \makefrontmatter
 
 \chapter{Introduction}
-This thesis started with the assumption that the traffic between back-end server APIs and the clients was not properly optimised. The reason behind this was thought to be a mismatch between the client expectations and the defined server responses. If, for example, a back-end API was developed with a desktop client in mind but a mobile client was introduced at a later stage, the traffic to the mobile client would not be properly adapted to fit its needs.
+This thesis started with the assumption that the network traffic between back-end server APIs and the clients was not properly optimised. The reason behind this was thought to be a mismatch between the client expectations and the defined server responses. If, for example, a back-end API was developed with a desktop client in mind but a mobile client was introduced at a later stage, the traffic to the mobile client would not be properly adapted to fit its needs.
 
 In the world of software development, perhaps especially in the enterprise area, there are many reasons why the back-end servers themselves cannot be rewritten. It can be because of cost factors, risk of breaking existing clients, ownership / licensing issues or even lack of proper knowledge. Because of reasons like these, we wanted to investigate whether the introduction of a new software layer between the client and server could mitigate these issues.
 
@@ -103,7 +108,7 @@ The previously mentioned new software layer between the client and server corres
 First we look at the transport protocol HTTP, especially HTTP/1.1, and what problems it introduces when the server and client does not communicate in an efficient manner. We look at the problematic areas in the protocol and how they, by utilising clever tricks from the industry, have been mitigated over the years.
 
 \subsection{API gateways in theory}
-Secondly, we theorise around the broad subject API gateways. Here we try to define some of the different ways the API gateway can improve the relationship between clients and servers. We investigate how the problems explored in the previous chapter about HTTP can be solved by utilising an API gateway.
+Secondly, we theorise around the broad subject of API gateways. Here we try to define some of the different ways the API gateway can improve the relationship between clients and servers. We investigate how the problems explored in the previous chapter about HTTP can be solved by utilising an API gateway.
 
 \subsection{API gateway framework}
 Thirdly, an API gateway framework was written to in order to better understand the API gateway problems from a practical and deeper technical point of view. This framework allows us to not only understand but also benchmark the problems defined in earlier chapters and provide real applicable solutions to them.
@@ -112,7 +117,7 @@ Thirdly, an API gateway framework was written to in order to better understand t
 Finally, we did a case study on three real-world production systems. The case studies consists of an analysis to determine whether the systems had any issues which could be resolved with the introduction of an API gateway. A solution was created for a selected part of that system with the framework described in the previous chapter. This was done in order to verify that not only could the framework be used in real-world scenarios, but also to provide a method for benchmarking the results before and after the introduction of the API gateway. By doing so, we can determine in which scenarios it is practical to implement an API gateway, how it can be done from a practical point of view and what the expected results will be.
 
 \chapter{Performance issues with HTTP/1.1}
-Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standardised version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The subsequent version, HTTP/2 (originally named HTTP/2.0), has been approved for publication as a proposed standard on Feb 17, 2015, by IESG. Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the default protocol used on all web servers and middle-boxes such as proxies and firewalls---and even longer for many legacy back-end systems and clients used in the slow-moving enterprise environments. It is therefore relevant to acknowledge and mitigate the performance issues related to HTTP/1.1, even many years after the release of HTTP/2.
+Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems\cite{http-info}. The first standardised version of HTTP/1.1 was released in January 1997\cite{rfc2068}. The subsequent version, HTTP/2 (originally named HTTP/2.0), has been approved for publication as a proposed standard on Feb 17, 2015, by Internet Engineering Steering Group (IESG). Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take many years before HTTP/2 fully replaces HTTP/1.1 as the default protocol used on all web servers and middle-boxes such as proxies and firewalls---and even longer for many legacy back-end systems and clients used in the slow-moving enterprise environments. It is therefore relevant to acknowledge and mitigate the performance issues related to HTTP/1.1, even many years after the release of HTTP/2.
 
 \section{Headers}
 \label{headers}
@@ -121,7 +126,7 @@ It is common in modern web applications to send a lot of HTTP requests, consisti
 
 There are typically plenty of headers transferred with every HTTP request and these headers can end up being a substantial amount of the total data of every request. The data stored in the headers may end up being the performance bottle neck with many HTTP requests---especially if a lot of small requests has to be transmitted on a frequent basis.
 
-As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response from the API is encoded in JSON format. 
+As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response from the API is encoded in JSON\footnote{JavaScript Object Notation, see appendix.} format. 
 
 Suppose a client was built with the intention to show details about, for example, your ten most followed friends. We can benchmark how making ten separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all ten users with one request---the difference being that headers are sent only once versus ten times.
 
@@ -189,7 +194,7 @@ Executing this request with cURL will give us the following result:
   \label{fig:headers_overhead}
 \end{figure}
 
-We can from the output in Figure~\ref{fig:headers_overhead} that 355 bytes are sent as request header data (line 1), 87 bytes are received as response header data (line 14, 16, 18 and 20) and the actual response payload is 286 bytes (line 22). This means that 61\% of the data of every request sent to the Instagram API end-point are nothing but header data.
+We can from the output in Figure~\ref{fig:headers_overhead} see that 355 bytes are sent as request header data (line 1), 87 bytes are received as response header data (line 14, 16, 18 and 20) and the actual response payload is 286 bytes (line 22). This means that 61\% of the data of every request sent to the Instagram API end-point are nothing but header data.
 
 Some of the header data is often required and as they do contain useful information so we can't just discard them. Consider instead if we would expose a new end-point where all ten users could be requested simultaneously with one HTTP request instead of ten, and that the end-point could return an array of JSON objects instead of a single one. In that case, we would get away with only transmitting the header data once and not ten times.
 
@@ -226,7 +231,7 @@ Some of the header data is often required and as they do contain useful informat
 
 From the results in Figure~\ref{fig:headers_overhead2}, we can see that the size of the request headers has been increased from 355 to 446 bytes (line 1) because of the longer URL which specifies all users to fetch. The response headers has increased with just one byte from 87 to 88 (line 15, 17, 19 and 21) because of the increased field \enquote{Content-Length}. This results in a combined header size of 534 bytes. The response payload has increased from 286 bytes to 2871 bytes (line 23)---about tenfold which is expected since we request ten users at once instead of one per request. A minor increase in data is added because of the new array syntax in the JSON format response.
 
-By not doing ten separate requests, and instead do one concatenated request, the overhead added as the result of all the headers have now been reduced from 61 to 16\% of the total transmitted data. This number will continue to scale accordingly to the number of requests concatenated---the more requests concatenated, the lesser amount of overhead from HTTP headers.
+By not doing ten separate requests, and instead do one concatenated request, the overhead added as the result of all the headers have now been reduced from 61 to 16\% of the total transmitted data. This number will continue to scale accordingly to the number of requests concatenated---the more requests concatenated, the less amount of overhead from HTTP headers.
 
 \begin{figure}[H]
   \centering
@@ -255,7 +260,7 @@ This approach is unfortunately not without its downsides as every new hostname r
 
 To illustrate this problem with an example, we can benchmark the impact of the connection pool limit when downloading thumbnails for an image gallery. Suppose we want to download 60 thumbnails and that the connection we are using in this example has a lot of bandwidth but suffers from high latency.
 
-We can see in Figure~\ref{fig:tcp_bottleneck} that the six TCP connection limit will become a bottleneck if all images were retrieved with one HTTP request per thumbnail. The results typically looks like stairs where the requests wait in pair of  six for a free TCP connection.
+We can see in Figure~\ref{fig:tcp_bottleneck} that the six TCP connection limit will become a bottleneck if all images were retrieved with one HTTP request per thumbnail. The results typically looks like stairs where the requests wait in groups of six for a free TCP connection.
 
 \begin{figure}[H]
   \centering
@@ -361,7 +366,7 @@ The focus in this thesis is to see how the clients can be optimised in terms of 
 \end{figure}
 
 \section{Differing client needs}
-Now, perhaps more than ever, we have a variety of consumer devices such as mobile phones, tablets, desktop computers and other smart devices such as TVs---all of which often consume the same APIs. One can imagine an API which returns a collection of the latest uploaded images to some service. 
+Now, perhaps more than ever, we have a variety of consumer devices such as mobile phones, tablets, desktop computers and other smart devices such as TVs---all of which often utilise the same API. One can imagine an API which returns a collection of the latest uploaded images to some service. 
 
 Since the screen size is drastically different on a mobile phone compared to a TV, the number of images the client wants to retrieve from the API can be very different. Depending on what type of client is requesting the data, the API gateway can modify the number of returned images.
 
@@ -409,11 +414,11 @@ This approach has the benefit that the conversion code does not have to be rewri
 By performing the transformations in the gateway, the processing work is moved away from the clients which can improve its performance as well as reducing the code size and its complexity.
 
 \section{Pure REST and HATEOAS}
-If an API follows the strict rules of REST, it utilises the concept of Hypermedia as the Engine of Application State (HATEOAS). Instead of defining and explicitly sharing a collection of end-points which the client can utilise, it requires the client to discover the resources itself by first performing a GET HTTP request to the APIs root URL. The back-end will respond with all the resources available from the root such as \enquote{users}. The client then has to query the \enquote{user's root} to discover which requests can be made in regards to the user's resource---and so forth. 
+If an API follows the strict rules of REST\footnote{Representational State Transfer, see appendix.}, it utilises the concept of HATEOAS\footnote{Hypermedia as the Engine of Application State, see appendix.}. Instead of defining and explicitly sharing a collection of end-points which the client can utilise, it requires the client to discover the resources itself by first performing a GET HTTP request to the APIs root URL. The back-end will respond with all the resources available from the root such as \enquote{users}. The client then has to query the \enquote{user's root} to discover which requests can be made in regards to the user's resource---and so forth. 
 
 By forcing the client to discover all resources, the client developer has to do a lot of demanding work in the implementation phase\cite[page 61]{AASG}. This approach also introduces a lot of network requests which increases the traffic significantly.
 
-API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS to a simpler API which only follows some of the restrictions put in place by the REST architectural principles. This can significantly lower the amount of traffic between the client and the back-end, which can be a big performance gain, especially in cases such as when the there is a high latency between the client and the back-end---this assuming that the latency between the API gateway and the back-end is low such as when they are placed inside the same LAN.
+API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS to a simpler API which only follows some of the restrictions put in place by the REST architectural principles. This can significantly lower the amount of traffic between the client and the back-end, which can be a big performance gain, especially in cases such as when there is a high latency between the client and the back-end---this assuming that the latency between the API gateway and the back-end is low such as when they are placed inside the same LAN.
 
 \begin{figure}[H]
   \centering
@@ -447,7 +452,7 @@ Responses from frequent API calls can be cached using the API gateway to reduce 
 \end{figure}
 
 \section{Decreasing bandwidth and cost}
-Cloud providers, such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_microsoft}, do not charge for any used bandwidth as long as data is transfered between servers in the same cloud regions. When utilising an API gateway in the cloud, bandwidth and its costs can be reduced by placing the API gateway in the same cloud region as the back-end servers and apply bandwidth saving techniques such as the previously in this chapter mentioned: compression, duplicate \& unnecessary items, pure REST and in some cases even format transformation.
+Cloud providers, such as Amazon\cite{cloud_amazon} and Microsoft\cite{cloud_microsoft}, do not charge for any used bandwidth as long as data is transfered between servers in the same cloud regions. When utilising an API gateway in the cloud, bandwidth and its costs, to and from the client, can be reduced by placing the API gateway in the same cloud region as the back-end servers and apply bandwidth saving techniques such as the previously in this chapter mentioned: compression, duplicate \& unnecessary items, pure REST and in some cases even format transformation.
 
 \begin{figure}[H]
   \centering
@@ -471,7 +476,7 @@ Another approach to solve this is to place an API gateway inside the DMZ of the 
 \end{figure}
 
 \section{Latency}
-One important goal of an API gateway is to reduce, or at least not significantly increase, the latency experienced in the communication between the client and the back-end server. Because of this, the placement of the API gateway in a network point of view, is very important. 
+One important goal of an API gateway is to reduce, or at least not significantly increase, the latency experienced in the communication between the client and the back-end server. Because of this, the placement of the API gateway in a network point of view, is very important. (In all of the following scenarios, we treat LAN latency as negligible which should be a fair assumption.)
 
 The first approach we can look at is to place the gateway on the same LAN as the client. Placing the API gateway on the same machine as the client is rarely possible or practical---it complicates updating the gateway and defeats much its purpose of introducing a new layer between the client and server. 
 
@@ -574,7 +579,7 @@ CrocodilePear's focus, on the other hand, is from a pure technical point of view
 
 \section{Technologies: language and libraries}
 \subsection{Elixir}
-Elixir is a functional language designed for building scalable and maintainable applications which run on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. Properties all of which are important when developing a successful API gateway.
+Elixir is a functional language designed for building scalable and maintainable applications which run on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. We consider all of these properties important when developing a successful API gateway.
 
 Two other important influences for choosing Elixir in this framework is the pipe operator and the asynchronous model achieved by utilising Elixir processes.
 
@@ -583,12 +588,12 @@ One of the integral parts of Elixir is the pipe operator: \lstinline{|>}. The pi
 
 \vspace{5mm}
 
-\noindent As an example, we can take a look at the following nested and hard to read code:
+\noindent As an example, we can take a look at the following nested and hard to read code. The code will take a list of all integers from 1 to 100,000, multiply all the integers with 3, remove all even numbers and finally summarise them:
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-Enum.sum(Enum.filter(Enum.map(1..100_000, &(&1 * 3)), odd?))
+Enum.sum(Stream.filter(Stream.map(1..100_000, &(&1 * 3)), odd?))
 \end{lstlisting}
   \caption{Elixir code written without the pipe operator.}
   \label{fig:no_pipe}
@@ -850,7 +855,7 @@ uris
 \subsection{Simple authentication}
 While security is at large outside the scope of this thesis (see page~\pageref{sec:security}), a small example was created to illustrate how a very simple security mechanism can work within CrocodilePear.
 
-In this example, a username and password is retrieved from the URL---note that this is a not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we create a new \enquote{HTTP Basic Auth} header with a predefined valid username and password (administrator / administrator) which we will use to authenticate ourselves with to back-end system.
+In this example, a username and password is retrieved from the URL---note that this is not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we create a new \enquote{HTTP Basic Auth} header with a predefined valid username and password (administrator / administrator) which we will use to authenticate ourselves with to back-end system.
 
 What this illustrates is that we can have different credentials for the API gateway and the back-end APIs. CrocodilePear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
 
@@ -936,12 +941,12 @@ LoopBack-Gateway is an experimental, minimum viable product, API gateway develop
 
 \chapter{Cases studies}
 
-Three systems was evaluated in order to find potential usage areas for API gateways in real-world products. The goal was to look the three systems from different view points---when two systems has common problems, then it will only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
+Three systems was evaluated in order to find potential usage areas for API gateways in real-world products. The goal was to look at the three systems from different view points; when two systems have common problems, then it will only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
 
 \section{Streamflow}
 Streamflow\cite{streamflow} is a system used within municipalities in order to communicate with its citizens and inside organisations to communicate with their customers. It is primarily used to register and track customer cases and works as a central case management hub.
 
-Streamflow exposes a HATEOAS API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing---however, a new web-client written using AngularJS is currently under development. The following case study has used the in-development AngularJS client using the existing production API which uses HTTP/1.1.
+Streamflow exposes a HATEOAS API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing---however, a new web-client written using AngularJS\footnote{JavaScript Framework developed by Google.} is currently under development. The following case study has used the in-development AngularJS client using the existing production API which uses HTTP/1.1.
 
 \subsection{Case lists}
 In Streamflow, incoming cases are automatically categorised according to the rules defined by the municipality or organisation. Each category has two folders: \enquote{inbox} and \enquote{my cases}. When clicking on the \enquote{inbox} or \enquote{my cases} for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
@@ -1000,7 +1005,7 @@ When the transaction overview screen is loaded, the client uses promises (asynch
   \caption{How the asynchronous calls to the API and the transformation works. There are two places where the code waits for previous computations before continuing.}
 \end{figure}
 
-To load the required data, the initial account information has to be fetched first. Using that response, the client will then load the account information, orders, fund orders and trades for that account. The client then waits for the four requests to respond, perform some transformations to the data and then merge the it with capital and transactions data so that the fetched information fits the clients internal data model.
+To load the required data, the initial account information has to be fetched first. Using that response, the client will then load the account information, orders, fund orders and trades for that account. The client then waits for the four requests to respond, perform some transformations to the data and then merge it with capital and transactions data so that the fetched information fits the clients internal data model.
 
 \subsection{Evaluation}
 All in all, the client requests data from five different API end-points and uses about twice as many functions to fetch and transform these results in the transaction overview. Since the requests are less than six in the transaction overview, it will have no problem with the TCP-connection limit.
@@ -1032,7 +1037,7 @@ Accountant System is a code name for a system used by a large Swedish accountant
 
 When it comes to converting XML to JSON, and vice versa, there is no standardised approach which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
 
-In an article from XML.com\cite{xml_json} which was published by O'Riley Media, a conversion algorithm was developed to highlight some of the issues regarding this topic. One of the examples started with a very simple XML structure defined in Figure~\ref{fig:xml_structure}.
+In an article from XML.com\cite{xml_json} which was published by O'Reilly Media, a conversion algorithm was developed to highlight some of the issues regarding this topic. One of the examples started with a very simple XML structure defined in Figure~\ref{fig:xml_structure}.
 
 \begin{figure}[H]
   \centering
@@ -1139,7 +1144,7 @@ When working with this API, the XML is entirely redundant from the clients point
   \caption{Each client has to maintain its own collection of XML-templates in order to make requests to the API.}
 \end{figure}
 
-To avoid having to maintain a collection of XML-template in each client, we can introduce an API gateway to do that instead. By introducing an API gateway, we can expose similar end-points which works without any XML in the client. The API gateway will maintain the only collection of XML-templates which it uses for translating the clients API-requests to back-end API requests. This makes the development of clients a lot easier from the API-call point of view but also has the benefit that there is only one, easily maintainable, collection of XML-templates.
+To avoid having to maintain a collection of XML-templates in each client, we can introduce an API gateway to do that instead. By introducing an API gateway, we can expose similar end-points which works without any XML in the client. The API gateway will maintain the only collection of XML-templates which it uses for translating the clients API-requests to back-end API requests. This makes the development of clients a lot easier from the API-call point of view but also has the benefit that there is only one, easily maintainable, collection of XML-templates.
 
 \begin{figure}[H]
   \centering
