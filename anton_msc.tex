@@ -588,7 +588,7 @@ Elixir is a functional language designed for building scalable and maintainable 
 Two other important influences for choosing Elixir in this framework is the pipe operator and the asynchronous model achieved by utilising Elixir processes.
 
 \subsection{The pipe operator}
-One of the integral parts of Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result of the expression left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: \lstinline{|}.
+One of the integral parts of Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result of the expression on the left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: \lstinline{|}.
 
 \vspace{5mm}
 
@@ -615,13 +615,13 @@ Enum.sum(Stream.filter(Stream.map(1..100_000, &(&1 * 3)), odd?))
 
 Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say something like: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which is then reflected in how the code is written.
 
-The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, this makes Rackla's syntax look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the client.
+The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, the minimalistic syntax used inside Rackla can make it look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the clients.
 
 \subsection{Elixir processes}
 Processes are Elixir's term for utilising the \enquote{Actors model} as its concurrency model. In Elixir, processes are extremely lightweight (in comparison with operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol.
+Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol. Another benefit of using Plug is that already existing third-party code for handling things like cookie management and cross-origin requests can be reused inside Rackla.
 
 \subsection{Hackney}
 Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
@@ -654,7 +654,7 @@ The identity of the producer is always known to the consumer via an Elixir PID (
   \caption{Message passing between a producer and a consumer. Time flows from left to right.}
 \end{figure}
 
-After the producer has been notified that a consumer is ready to consume its data, it must first respond with a message containing the HTTP status code, the headers- and the meta data map. After that, the payload chunks must be sent in order. Finally, a \enquote{done} message is sent indicating that the producer will terminate and all chunks has been sent.
+After the producer has been notified that a consumer is ready to consume its data, it must first respond with a message containing the HTTP status code, the headers- and the meta data map. After that, the payload chunks must be sent in order. Finally, a \enquote{done} message is sent to tell the consumer that the producer will terminate and all chunks has been sent.
 
 All Elixir processes, with the consumers and producers, are abstracted away from the user of the framework. Instead, the end-user only interacts with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has no performance penalty while it does make the development a whole lot easier since the developer does not have to worry about the message passing. There is however nothing that hinders a developer to work on the lower process level if that for some reason is desired.
 
@@ -672,26 +672,26 @@ The \lstinline{response} function takes a list of producers and turns them in to
 As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response. Rackla only uses chunked responses which all HTTP/1.1 conforming clients must be able to handle\cite{chunked_required}. Note however that synchronous non-chunking requests, which can be made XMLHttpRequests in JavaScript, will still be able to handle the responses---the only exception is that they will not be able to gain any benefit from the chunking, but there is no downside either.
 
 \subsection{Transformers}
-Transformers is a concept used in Rackla to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
+Transformers is a concept used in Rackla to manipulate the response data from a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
 
-The transformer function takes a lambda function (a higher order function) as its only parameter. The lambda function is called with the response data structure as soon as its available as its only parameter which allows transformations to take place.
+The transformer function takes a lambda function (a higher order function) as its only parameter. The lambda function is called with the response data structure as soon as its available as its only parameter which allows transformations to take place---the lambda function must finally return a (modified) response data structure.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
 blanker = fn(response) ->
   response
-  |> Dict.update!(:status, fn(_discarded_status) -> 404 end)
-  |> Dict.update!(:headers, fn(_discarded_headers) -> %{} end)
-  |> Dict.update!(:body, fn(_discarded_body) -> "" end)
-  |> Dict.update!(:meta, fn(_discarded_meta) -> %{} end)
+  |> Map.update!(:status, fn(_discarded_status) -> 404 end)
+  |> Map.update!(:headers, fn(_discarded_headers) -> %{} end)
+  |> Map.update!(:body, fn(_discarded_body) -> "" end)
+  |> Map.update!(:meta, fn(_discarded_meta) -> %{} end)
 end
 \end{lstlisting}
-  \caption{The function blanker is a simple lambda function which can be used inside the transformer function. It sets the HTTP status code to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing corresponding empty values instead. The actual data in the status, headers, meta and body are discarded by using an underscore at the start of the variable name in the function call \lstinline{Dict.update!}.}
+  \caption{The function blanker is a simple lambda function which can be used inside the transformer function. It sets the HTTP status code to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing the corresponding empty value instead. The actual data in the status, headers, meta and body are discarded by using an underscore at the start of the variable name in the function call \lstinline{Map.update!}.}
 \end{figure}
 
 \subsection{Timers}
-Rackla include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message in any of the asynchronous processes can be timed individually.
+Rackla include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message passed between all of the asynchronous processes can be timed individually.
 
 \begin{figure}[H]
   \centering
@@ -713,9 +713,9 @@ Rackla include timers which can be placed anywhere in the pipeline to benchmark 
 \end{figure}
 
 \subsection{Concatenate JSON}
-The function \lstinline{concatenate_json} takes a list with an arbitrary number of producers, consumes them and returns one new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data. The order is determined based on which producer starts responding first---just like it is in the \lstinline{response} function.
+The function \lstinline{concatenate_json} takes a list with an arbitrary number of producers, consumes them and returns one new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data.
 
-Each item in the list will be a JSON object which has four keys: status, headers, meta and body (payload). Optionally, if a \enquote{true} value is passed in to the function, each item in the list only contain the \enquote{body} (payload)---the headers, meta and status will be discarded.
+Each item in the list will be a JSON object which has five keys: status, headers, meta, body (payload) and error. Optionally, if a \enquote{true} value is passed in to the function, each item in the list only contain the \enquote{body} (payload)---the headers, meta, status and error will be discarded.
 
 
 \begin{figure}[H]
@@ -730,7 +730,7 @@ Even though \lstinline{concatenate_json} takes an arbitrary number of producer P
 
 \section{Examples}
 \subsection{Request proxying}
-A simple proxy is a good introduction to demonstrates how the request / response pipeline can be utilised. In this example, we extract an URL from the query string from the connection and pipe it to the \lstinline{request} function which itself is piped into the \lstinline{response} function.
+A simple proxy is a good introduction to demonstrates how the request / response pipeline can be utilised. In this example, we extract a URL from the query string from the connection and pipe it to the \lstinline{request} function which itself is piped into the \lstinline{response} function.
 
 \begin{figure}[H]
   \centering
@@ -770,7 +770,7 @@ String.split(conn.query_string, "|")
   \caption{Demonstration of the concatenate\_json function.}
 \end{figure}
 
-The response will be one JSON list where each item in the list contains the response's status, headers, meta data and the payload as an individual JSON objects.
+The response will be a JSON list in which each item contain the response's status, headers, meta data, potential error and the payload as an individual JSON objects.
 
 \subsection{Transformers}
 In this more complex example, we will use all the previously explained techniques along with a \lstinline{transform} function to create a much more powerful end-point. We will go over the code from the Figure~\ref{fig:code_transformer} line by line.
@@ -803,11 +803,12 @@ end
   \label{fig:code_transformer}
 \end{figure}
 
+
 On line 1, we expose the new end-point \lstinline{/temperature} from the API gateway on which we will listen for incoming GET requests.
 
-On line 2--4, we intercept the city names and country codes, such as \enquote{Lund,SE|Copenhagen,DK}, from the query string which is sent with the connection and then split them in to a list using the separating character: \lstinline{|}. This list is then mapped over which will result in the appropriate URLs to call for the underlying back-end API which we will use in this example.
+On line 2--4, we intercept the city names and country codes, such as \lstinline{Lund,SE|Copenhagen,DK}, from the query string which is sent with the connection and then split them in to a list using the separating character: \lstinline{|}. This list is then mapped over which will result in the appropriate URLs to call for the underlying back-end API which we will use in this example.
 
-On line 6--13, we create a new transformer lambda function called \lstinline{temperature_extractor}. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data structures by utilising the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again---the rest of the payload data is discarded. The other response data: status, headers and meta, will be kept intact since our function only updates the data stored within they key \lstinline{:body}.
+On line 6--13, we create a new transformer lambda function called \lstinline{temperature_extractor}. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data structures by utilising the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again---the rest of the payload data is discarded. The other response data: status, headers, error and meta, will be kept intact since our function only updates the data stored within they key \lstinline{:body}.
 
 On line 15--19, we tie everything together by creating a new pipeline. We take the URLs, pipe them into the \lstinline{request} function, pipe the result from the \lstinline{request} function in to the \lstinline{transform} function with our new lambda function \lstinline{temperature_extractor}, pipe the result from \lstinline{transform} in to the \lstinline{concatenate_json} function and finally pipe the result to the \lstinline{response} function which will respond to the client.
 
@@ -869,12 +870,12 @@ What this illustrates is that we can have different credentials for the API gate
 get "/http-basic-auth/:user/:password" do
   headers =
     if (user == "test_user" and password == "test_password") do
-      [authorization: "Basic #{Base.encode64("administrator:administrator")}"]
+      %{authorization: "Basic #{Base.encode64("administrator:administrator")}"}
     else
-      []
+      %{}
     end
   
-  %{url: "https://api-url/", headers: headers}
+  %Rackla.Request{url: "https://api-url/", headers: headers}
   |> request
   |> response(conn)
 end
@@ -898,7 +899,7 @@ end
   \caption{Individual requests are cached independently of each other with the substitute function \lstinline{request_cache}.}
 \end{figure}
 
-The new substitute function \lstinline{request_cache} can cache the requested URLs independent of each other. This means that if we have 50\% of the requests cached, we only have to perform the remaining 50\% requests. The draw-back with this approach is that only the \enquote{raw} responses from the back-end APIs are cached. This means that if we are doing any kind of transformations inside the pipeline, these will be performed on all results---including cached responses. One has to determine if these computations are negligible or if another caching approach has to be taken.
+The new substitute function \lstinline{request_cache} can cache the requested URLs independently of each other. This means that if we have 50\% of the requests cached, we only have to perform the remaining 50\% requests. The draw-back with this approach is that only the \enquote{raw} responses from the back-end APIs are cached. This means that if we are doing any kind of transformations inside the pipeline, these will be performed on all results---including cached responses. One has to determine if these computations are negligible or if another caching approach has to be taken.
 
 \begin{figure}[H]
   \centering
@@ -924,7 +925,7 @@ The second approach is to add the response to the cache right before it is sent 
 
 Both these proof-of-concept approaches are naive and there are many things which has to be considered before implementing a caching solution in a real world product such as how long responses should be cached and whether the client should be able to invalidate a cached item and so forth. 
 
-In addition to this, the cache can also be used as a fail over solution where the cache is only used when a back-end server is down or if a request is failing for any reason such as a network failure. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can not be covered in this thesis.
+In addition to this, the cache can also be used as a fail over solution where the cache is used only when a back-end server is down or if a request is failing for some reason such as a network failure. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can not be covered in this thesis.
 
 \section{Related works}
 \subsection{Tyk}
