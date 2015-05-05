@@ -571,11 +571,11 @@ Apigee does API tool development and has put together a collection of articles w
 
 \noindent \url{http://apigee.com/docs/content/managing-api-performance}
 
-\chapter{CrocodilePear: API gateway framework}
+\chapter{Rackla: API gateway framework}
 
-The framework CrocodilePear was developed in order to better understand and be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focus on expanding existing APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service) with drag-and-drop graphical interfaces. 
+The framework Rackla was developed in order to better understand and be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focus on expanding existing APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service) with drag-and-drop graphical interfaces. 
 
-CrocodilePear's focus, on the other hand, is from a pure technical point of view. The goal is to help developers create their own customised API gateways programatically with a high degree of freedom and a small amount of abstractions which otherwise could limit the use cases. CrocodilePear strives to be very flexible and let the developers create their own custom solutions in any way they see fit.
+Rackla's focus, on the other hand, is from a pure technical point of view. The goal is to help developers create their own customised API gateways programatically with a high degree of freedom and a small amount of abstractions which otherwise could limit the use cases. Rackla strives to be very flexible and let the developers create their own custom solutions in any way they see fit.
 
 \section{Technologies: language and libraries}
 \subsection{Elixir}
@@ -611,26 +611,26 @@ Enum.sum(Stream.filter(Stream.map(1..100_000, &(&1 * 3)), odd?))
 
 Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say something like: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which is then reflected in how the code is written.
 
-The pipe operator is an important part in how CrocodilePear works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, this makes CrocodilePear's syntax look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the client.
+The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, this makes Rackla's syntax look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the client.
 
 \subsection{Elixir processes}
 Processes are Elixir's term for utilising the \enquote{Actors model} as its concurrency model. In Elixir, processes are extremely lightweight (in comparison with operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate by message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In CrocodilePear, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol.
+Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol.
 
 \subsection{Hackney}
-Internally, CrocodilePear uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the CrocodilePear framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
+Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
 
 \section{High-level concept}
 
 \subsection{Data structure}
-The data structure used in CrocodilePear corresponds to that of an HTTP request. It consists of a numeric HTTP status code, such as 200 for OK\cite{http_status_codes}, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body (not to be confused with the HTML body-tag).
+The data structure used in Rackla corresponds to that of an HTTP request. It consists of a numeric HTTP status code, such as 200 for OK\cite{http_status_codes}, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body (not to be confused with the HTML body-tag).
 
-In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves but utilised inside CrocodilePear.
+In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves but utilised inside Rackla.
 
 \subsection{Processes: producers and consumers}
-The key component in CrocodilePear's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its own identity and a status telling the producer that the consumer is ready to receive.
+The key component in Rackla's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its own identity and a status telling the producer that the consumer is ready to receive.
 
 \begin{figure}[H]
   \centering
@@ -655,20 +655,20 @@ After the producer has been notified that a consumer is ready to consume its dat
 All Elixir processes, with the consumers and producers, are abstracted away from the user of the framework. Instead, the end-user only interacts with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has no performance penalty while it does make the development a whole lot easier since the developer does not have to worry about the message passing. There is however nothing that hinders a developer to work on the lower process level if that for some reason is desired.
 
 \section{Pipeline}
-The pipeline is what ties all pieces in CrocodilePear together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
+The pipeline is what ties all pieces in Rackla together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
 
-The two exceptions are the functions \lstinline{request} and \lstinline{response} which usually are the beginning and the end of each pipeline. It is also possible to mix a CrocodilePear pipeline with a normal function pipeline in Elixir---this is explored further in the examples below.
+The two exceptions are the functions \lstinline{request} and \lstinline{response} which usually are the beginning and the end of each pipeline. It is also possible to mix a Rackla pipeline with a normal function pipeline in Elixir---this is explored further in the examples below.
 
 \subsection{Request}
-The \lstinline{request} function in CrocodilePear takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP methods such as GET, POST and so forth. The \lstinline{request} function will always return a list of producer PIDs. Each producer will produce the response from one HTTP request for the specified URL.
+The \lstinline{request} function in Rackla takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP methods such as GET, POST and so forth. The \lstinline{request} function will always return a list of producer PIDs. Each producer will produce the response from one HTTP request for the specified URL.
 
 \subsection{Response}
 The \lstinline{response} function takes a list of producers and turns them in to an actual HTTP response by utilising the provided data structure \lstinline{conn} in the library \lstinline{Plug}. If more than one producer is passed to the \lstinline{response} function, the first responding producer will be consumed first which means that the response order is nondeterministic---if not explicitly defined otherwise. However, the first responding producer will be consumed entirely before any other producer is consumed which guarantees that the chunks from different responses will not be mixed together.
 
-As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response. CrocodilePear only uses chunked responses which all HTTP/1.1 conforming clients must be able to handle\cite{chunked_required}. Note however that synchronous non-chunking requests, which can be made XMLHttpRequests in JavaScript, will still be able to handle the responses---the only exception is that they will not be able to gain any benefit from the chunking, but there is no downside either.
+As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response. Rackla only uses chunked responses which all HTTP/1.1 conforming clients must be able to handle\cite{chunked_required}. Note however that synchronous non-chunking requests, which can be made XMLHttpRequests in JavaScript, will still be able to handle the responses---the only exception is that they will not be able to gain any benefit from the chunking, but there is no downside either.
 
 \subsection{Transformers}
-Transformers is a concept used in CrocodilePear to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
+Transformers is a concept used in Rackla to manipulate the response data form a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
 
 The transformer function takes a lambda function (a higher order function) as its only parameter. The lambda function is called with the response data structure as soon as its available as its only parameter which allows transformations to take place.
 
@@ -687,7 +687,7 @@ end
 \end{figure}
 
 \subsection{Timers}
-CrocodilePear include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message in any of the asynchronous processes can be timed individually.
+Rackla include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message in any of the asynchronous processes can be timed individually.
 
 \begin{figure}[H]
   \centering
@@ -853,11 +853,11 @@ uris
 \end{figure}
 
 \subsection{Simple authentication}
-While security is at large outside the scope of this thesis (see page~\pageref{sec:security}), a small example was created to illustrate how a very simple security mechanism can work within CrocodilePear.
+While security is at large outside the scope of this thesis (see page~\pageref{sec:security}), a small example was created to illustrate how a very simple security mechanism can work within Rackla.
 
 In this example, a username and password is retrieved from the URL---note that this is not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we create a new \enquote{HTTP Basic Auth} header with a predefined valid username and password (administrator / administrator) which we will use to authenticate ourselves with to back-end system.
 
-What this illustrates is that we can have different credentials for the API gateway and the back-end APIs. CrocodilePear uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
+What this illustrates is that we can have different credentials for the API gateway and the back-end APIs. Rackla uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
 
 \begin{figure}[H]
   \centering
@@ -879,7 +879,7 @@ end
 \end{figure}
 
 \subsection{Caching}
-Response caching can be added to CrocodilePear. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the \lstinline{request} function with a new \lstinline{request_cache} function or we can do the caching outside the pipeline. 
+Response caching can be added to Rackla. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the \lstinline{request} function with a new \lstinline{request_cache} function or we can do the caching outside the pipeline. 
 
 \begin{figure}[H]
   \centering
@@ -925,7 +925,7 @@ In addition to this, the cache can also be used as a fail over solution where th
 \section{Related works}
 \subsection{Tyk}
 
-Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like CrocodilePear, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful.
+Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like Rackla, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful.
 
 \vspace{5mm}
 
@@ -969,7 +969,7 @@ When viewing the case list, several recursive requests will be executed from the
   \caption{How the recursive requests are executed in the Streamflow web client in order to fetch all needed resources and comply with HATEOAS in the REST architectural specification.}
 \end{figure}
 
-By placing an API gateway written with CrocodilePear in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated, for the client, to one request with a single response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
+By placing an API gateway written with Rackla in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated, for the client, to one request with a single response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
 
 In the test environment, measurements where made on a list which contained 156 cases. For this list, the client had to execute 373 requests---1 request for the list, 156 requests for each case to get the location of the \enquote{general} resource, 156 requests for the \enquote{general} resource for each case, and 60 \enquote{priority} requests for the cases which needed that information. All these request where replaced with one single request to the API gateway which took care of the HATEOAS communication. By doing so, the load time for the client was reduced by 55\%---from 11 seconds to 5 seconds. The total transmitted data was reduced from 1,100~KB to 159~KB---a 86\% decrease of transmitted data.
 
@@ -990,7 +990,7 @@ In the production environment, a measurement was made to determine the number of
 Lastly, it should be noted that the final version of the web-client will most likely be limited to displaying 10--20 cases at a time using pagination. This would reduce the number of requests to 20--60 for any given inbox view. This is however still a substantial amount of HTTP requests to perform every time a user checks an inbox. This approach will neither address the problem that 86\% of the transferred data is unnecessary overhead.
 
 \section{Bank App}
-The second system CrocodilePear was evaluated with was a banking app for an undisclosed major bank in Sweden, here after simply called \enquote{Bank App}. Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a modern and well design API from the start with a design that suited the clients needs. Further on, the clients where written as hybrid apps where common web technologies could be shared among the different platforms and only a small amount of native components had to be changed.
+The second system Rackla was evaluated with was a banking app for an undisclosed major bank in Sweden, here after simply called \enquote{Bank App}. Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a modern and well design API from the start with a design that suited the clients needs. Further on, the clients where written as hybrid apps where common web technologies could be shared among the different platforms and only a small amount of native components had to be changed.
 
 \subsection{Transaction overview}
 An essential part of the application is the transaction overview which is where the users can view their balance, orders, fund orders, trades and transactions.
@@ -1189,7 +1189,7 @@ API gateways can also be helpful when designing new systems which has to support
 
 The API gateway concept is very broad and there are many unexplored areas to which the concept can be applied. There are many topics in this thesis which are only briefly touched upon, such security and caching, which could fill an entire thesis of their own in order to be fully explored.
 
-The framework CrocodilePear developed in this thesis used Elixir but there is no doubt that the same functionality could be translated to many other programming languages as well. By migrating the framework to other languages, new challenges and solutions would doubtless appear and shine new light on the topic. 
+The framework Rackla developed in this thesis used Elixir but there is no doubt that the same functionality could be translated to many other programming languages as well. By migrating the framework to other languages, new challenges and solutions would doubtless appear and shine new light on the topic. 
 
 \cleardoublepage
 \phantomsection
