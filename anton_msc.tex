@@ -413,14 +413,14 @@ When working with older legacy systems, the data can be formatted in a way which
   \caption{The client requests \enquote{user} in JSON-format. The API gateway fetches \enquote{user} in XML-format from the back-end, converts it to JSON and responds to the client.}
 \end{figure}
 
-The approach with using an API Gateway has the benefit that the conversion code does not have to be rewritten in every client. Rewriting the same conversion code, potentially in a new language or by using a different library, for each client increases the risk of introducing bugs. The reason for this is that different libraries works in different ways even though they solve the same problem, especially when there is no standardised mapping between two formats. Bugs are also introduced as the size of the code base grows when the same task has to be rewritten several times\cite{code_complete}. 
+The approach with using an API Gateway has the benefit that the conversion code does not have to be rewritten in every client. Rewriting the same conversion code, potentially in a new language or by using a different library, for each client increases the risk of introducing bugs. The reason for this is that different libraries works in different ways even though they solve the same problem, especially when there is no standardised mapping between two formats. Bugs are also introduced as the size of the code base grows when the same task has to be rewritten several times\cite[page 521]{code_complete}. 
 
 By performing the transformations in the gateway, the processing work is moved away from the clients which can improve its performance as well as reducing the code size and its complexity.
 
 \section{Pure REST and HATEOAS}
 If an API follows the strict rules of REST\footnote{Representational State Transfer, see appendix.}, it must utilise the concept of HATEOAS\footnote{Hypermedia as the Engine of Application State, see appendix.}. Instead of defining and explicitly sharing a collection of end-points which the client can utilise, it requires the client to discover the resources itself by first performing a GET HTTP request to the APIs root URL. The back-end will respond with all the resources available from the root such as \enquote{users}. The client then has to query the \enquote{user's root} to discover which requests can be made in regards to the user's resource---and so forth. 
 
-By forcing the client to discover all resources, the client developer has to do a lot of demanding work in the implementation phase\cite[page 61]{AASG}. This approach also introduces a lot of HTTP requests which increases the network traffic significantly.
+By forcing the client to discover all resources, the client developer has to do a lot of demanding work in the implementation phase\cite[page 62]{AASG}. This approach also introduces a lot of HTTP requests which increases the network traffic significantly.
 
 API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS to a simpler API which only follows some of the restrictions put in place by the REST architectural principles. This can significantly lower the amount of traffic between the client and the back-end, which can be a big performance gain, especially in cases such as when there is a high latency between the client and the back-end---assuming that the latency between the API gateway and the back-end is low such as when they are placed inside the same LAN.
 
@@ -484,7 +484,7 @@ One important goal of an API gateway is to reduce, or at least not significantly
 
 The first approach we can look at is placing the gateway on the same LAN as the client. Placing the API gateway on the same machine as the client is rarely possible or practical---it complicates updating the gateway and defeats much its purpose of introducing a new layer between the client and server. 
 
-Placing the API gateway inside the same LAN as the client can be a good solution, for example when it is used inside a corporation's private network. The constraint with this approach is that no outside clients, such as smartphones not connected to the internal network, will be able to avoid the extra latency introduced over WAN---or may not be able to connect to it at all based on the LAN security. This is however an approach which does not introduce double latency, but it does not decrease it either.
+Placing the API gateway inside the same LAN as the client can be a good solution, for example when it is used inside a corporation's private network. The constraint with this approach is that no outside clients, such as smartphones not connected to the internal network, will be able to avoid the extra latency introduced over WAN\footnote{Wide Area Network, see appendix.}---or may not be able to connect to it at all based on the LAN security. This is however an approach which does not introduce double latency, but it does not decrease it either.
 
 The second approach is to place the API gateway as a separate application in its own cloud or on a LAN separated from the back-end and client. While this may be the only solution for certain hosting setups, this introduces the problem of double latency. Since the TCP-packets has to go through two WAN connections, both of them can introduce a substantial amount of latency which can worsen the response times.
 
@@ -567,7 +567,7 @@ Netflix has applied a concept similar to API gateways where each client team dev
 
 
 \subsection{Managing API Performance, Apigee}
-Apigee does API tool development and has put together a collection of articles with focus on optimising API performance in common scenarios.
+Apigee, who works with API tool development, have put together a collection of articles with focus on optimising API performance in common scenarios.
 
 \vspace{5mm}
 
@@ -577,7 +577,7 @@ Apigee does API tool development and has put together a collection of articles w
 
 \chapter{Rackla: API gateway framework}
 
-The framework Rackla was developed in order to better understand and be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focus on expanding existing APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service) with drag-and-drop graphical interfaces. 
+The framework Rackla\footnote{\url{https://github.com/AntonFagerberg/rackla}} was developed in order to better understand and be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focus on expanding existing APIs from the business point of view with a heavy focus on monetisation, security and BaaS (backend as a service) with drag-and-drop graphical interfaces. 
 
 Rackla's focus, on the other hand, is from a pure technical point of view. The goal is to help developers create their own customised API gateways programatically with a high degree of freedom and a small amount of abstractions which otherwise could limit the use cases. Rackla strives to be very flexible and let the developers create their own custom solutions in any way they see fit.
 
@@ -633,7 +633,7 @@ The data structure used in Rackla corresponds to that of an HTTP request. It con
 
 In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves but utilised inside Rackla. 
 
-Lastly, there is also an error message which the user can utilise to handle all kinds of errors such as DNS lookup failures, non-responding back-ends but also thrown exceptions. A full description of the error handling mechanism is however outside the scope of this brief introduction.
+Lastly, there is also an error field which the user can utilise to handle all kinds of errors such as DNS lookup failures, non-responding back-ends but also thrown exceptions. A full description of the error handling mechanism is however outside the scope of this brief introduction.
 
 \subsection{Processes: producers and consumers}
 The key component in Rackla's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its own identity and a status telling the producer that the consumer is ready to receive.
@@ -1023,7 +1023,7 @@ It is possible that the overhead of unnecessary data can differ from customer to
 
 What made the Bank App special was that the different mobile platforms shared a common code base for the overview screen. This meant that iOS, Android and Windows Phone could utilise the same JavaScript code for transforming, filtering and sorting the requested data.
 
-If the Bank App instead would have been developed using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1--25 errors per 1000 lines of code\cite{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1--2.5 new bugs---a number which could be reduced if the code only had to be written once in the API gateway instead.
+If the Bank App instead would have been developed using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1--25 errors per 1000 lines of code\cite[page 521]{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1--2.5 new bugs---a number which could be reduced if the code only had to be written once in the API gateway instead.
 
 Perhaps more importantly, by moving the code to the API gateway means that the combined codebase would not just be less error prone but would also be more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API gateway and avoid updating every client. 
 
@@ -1163,7 +1163,7 @@ To avoid having to maintain a collection of XML templates in each client, we can
 
 \subsection{Evaluation}
 
-In the case of Accountant Software, we can see a decrease in used bandwidth when dropping the XML format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP (Simple Object Access protocol) with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw an entirly fair parallel with that study to this case study.
+In the case of Accountant Software, we can see a decrease in used bandwidth when dropping the XML format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP\footnote{Simple Object Access protocol, see appendix.} with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw an entirly fair parallel with that study to this case study.
 
 The biggest gain with utilising an API gateway in this scenario is likely to be found in developer productivity and code stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated back in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here is not entirely fair either since SOAP is a protocol, not just using XML, while REST is an architectural style which can utilise XML---and that is the case for Accountant Software.
 
