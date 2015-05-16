@@ -585,7 +585,7 @@ Rackla's focus, on the other hand, is from a pure technical point of view. The g
 \subsection{Elixir}
 Elixir is a functional language designed for building scalable and maintainable applications which run on the Erlang Virtual Machine. The Erlang VM is known for running low-latency, distributed and fault-tolerant systems while also being successfully used in web development\cite{elixir}. We consider all of these properties important when developing a successful API gateway.
 
-Two other important influences for choosing Elixir in this framework is the pipe operator and the asynchronous model achieved by utilising Elixir processes.
+Two other important factors for choosing to use Elixir in this framework is the pipe operator and the asynchronous behaviour defined by Elixir processes.
 
 \subsection{The pipe operator}
 One of the integral parts of Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result of the expression on the left side of the operator and pipes it into the first argument of the right hand side function. People who are accustomed to Unix may see the similarity with the Unix pipe operator: \lstinline{|}.
@@ -610,10 +610,10 @@ Enum.sum(Stream.filter(Stream.map(1..100_000, &(&1 * 3)), odd?))
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{The same code as seen in Figure~\ref{fig:no_pipe} but written with the pipe operator.}
+  \caption{The same code as seen in Figure~\ref{fig:no_pipe} but expressed with the pipe operator.}
 \end{figure}
 
-Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say something like: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which is then reflected in how the code is written.
+Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which corresponds to how the code is written.
 
 The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, the minimalistic syntax used inside Rackla can make it look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the clients.
 
@@ -624,12 +624,12 @@ Processes are Elixir's term for utilising the \enquote{Actors model} as its conc
 Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol. Another benefit of using Plug is that already existing third-party code for handling things like cookie management and cross-origin requests can be reused inside Rackla.
 
 \subsection{Hackney}
-Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
+Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users in order to simplify the API gateway development and ensure that Hackney can be removed or replaced in future versions if necessary.
 
 \section{Rackla overview}
 
 \subsection{Pipeline}
-Pipelines is what ties all the pieces in Rackla together. The goal, when writing an API gateway using Rackla, is to describe the process as a sequence of steps. The simplest step is to proxy a request in the API gateway---that is to relay the request without modifying it. We can do that by first defining a URL to call, pipe it to the request function and then pipe it to the response function:
+A pipeline is the result of using the pipe operator to tie the different functions together. The goal, when writing an API gateway using Rackla, is to describe the process as a sequence of steps defined as a pipline. The simplest scenario is to proxy a request within the API gateway---that is to relay a request without modifying it. We can do that by first defining a URL to call, pipe it to the request function and then pipe it to the response function:
 
 \begin{figure}[H]
   \centering
@@ -638,15 +638,15 @@ Pipelines is what ties all the pieces in Rackla together. The goal, when writing
 |> request
 |> response
 \end{lstlisting}
-  \caption{A simple proxy which relay the entire payload untouched.}
+  \caption{A simple proxy which relays the entire payload untouched.}
 \end{figure}
 
 \subsection{Monads and Functional programming}
-In order for the pipeline to work, a new type has to be defined. This type has to be able to handle multiple requests asynchronously while still enable us to modify the underlying values before they are sent to the clients.
+In order for the pipeline to work, a new type has to be defined which can be passed between the different functions. This type has to be able to handle any number of requests asynchronously while still enable us to transform the eventual values before they are sent to the client.
 
 With these constraints, a new type was defined with inspiration taken from the concept of monads---a monad is a structure which represents computations as a sequence of steps.
 
-The new \lstinline{Rackla} type defines what it means to chain operations together using well established concepts used in functional programming such as \lstinline{map}, \lstinline{flat\_map} and \lstinline{reduce} with focus on still being asynchronous.
+The new \lstinline{Rackla} type defines what it means to chain operations together using well established concepts used in functional programming such as \lstinline{map}, \lstinline{flat_map} and \lstinline{reduce} with focus on still being asynchronous.
 
 To illustrate this, we can use Rackla to request two images over HTTP, transform the binary data by applying a Base64 encoding to them and finally replying to the client with the encoded data:
 
@@ -662,31 +662,29 @@ To illustrate this, we can use Rackla to request two images over HTTP, transform
     \label{fig:map}
 \end{figure}
 
-It is worth pointing out here that the new \lstinline{Rackla} type allows this pipeline to be fully asynchronous, meaning that the response order sent to the client will depend on which of image urls is responding first and which of the Base64 encodings is performed the fastest. It can very well be the case that one Base64 encoded image has already been fully sent to the client while the other image is still being requested in the API gateway.
+It is important to point out that it is the new \lstinline{Rackla} that allows this pipeline to be fully asynchronous---the order of the response chunks sent to the client will depend on which of image urls is responding first and which of the Base64 encodings is performed the fastest. It can very well be the case that one Base64 encoded image has already been fully sent to the client while the other image is still being requested in the API gateway.
 
 \subsection{Function overview}
-We will now explain the most common functions defined in Rackla which enables us to build very flexible and powerful API gateways.
+In this section we will go through and explain the most common functions defined in the Rackla framework. These functions enable us to build very flexible and powerful API gateways.
 
 \subsubsection{Request}
-The function \lstinline{request}, in the simple case, takes one or many URLs as strings and returns a \lstinline{Rackla} type. The data eventually contained inside the \lstinline{Rackla} type will correspond to either the result of the HTTP request or an error tuple if any error occur such as DNS lookup failures or non-responding back-ends.
+The function \lstinline{request}, in the simple case, takes one or many URLs as strings and returns a \lstinline{Rackla} type. The data eventually contained inside the \lstinline{Rackla} type will correspond to either the results from the HTTP requests or an error tuples if any error occur such as DNS lookup failures or a non-responding back-end.
 
-More advanced HTTP requests can be executed by instead passing one or many key-value maps to the \lstinline{request} function. By using a map, we can define which HTTP verb to use such as GET or POST, what timeout limits we want to use and how we want to handle insecure SSL connections. We can also, by using a key-value map, define custom request headers and attach a request body (payload).
+More advanced HTTP requests can be executed by instead passing one or many key-value maps to the \lstinline{request} function. By using a map, we can define which HTTP verb to use such as GET or POST, what timeout limits we want to use and how we want to handle insecure SSL connections. We can also, by using a key-value map, define custom request headers and attach a request body (payload) to each individual request.
 
-We can also define here if we want the \lstinline{Rackla} type to contain just the response body or a map containing, in addition to the response body, the response status code and response headers.
-
-Optionally, we can tell \lstinline{request} if we are interested in the entire HTTP response including the HTTP status code and the headers or if we, as is default, are only interesting in the body (payload).
+We can also in the \lstinline{request} function define if we want the \lstinline{Rackla} type to contain just the response body or a map containing, in addition to the response body, the response status code and response headers.
 
 \subsubsection{Just}
 The function \lstinline{just} takes any existing type and encapsulates it inside a Rackla type. This function is useful when mixing already available data with eventually available data from HTTP requests.
 
 \subsubsection{Response}
-The function \lstinline{response} takes a \lstinline{Rackla} type and converts the underlying types to an HTTP response and sends it to the client. In order to conform to the asynchronous nature of Rackla, we only use chunked responses\cite{chunked}. We can pass in options in order to customise the response as well. Available options are: \lstinline{json} which automatically encodes the response as a JSON data structure, \lstinline{compress} which compresses the response using GZip compression, \lstinline{sync} which guarantees that the responses are sent in the same order as were requests were made, \lstinline{status} sets the response status code and \lstinline{headers} which defines the response headers used in the HTTP response.
+The function \lstinline{response} takes a \lstinline{Rackla} type and converts the underlying types to an HTTP response and sends it to the client. In order to conform to the asynchronous nature of Rackla, we only use chunked responses\cite{chunked}. We can pass in options in order to customise the response, available options are: \lstinline{json} which automatically encodes the response as a JSON data structure, \lstinline{compress} which compresses the response using GZip compression, \lstinline{sync} which guarantees that the responses are sent in a deterministic order, \lstinline{status} defines the response's status code and \lstinline{headers} define which headers to use in the HTTP response.
 
 \subsubsection{Map}
-The function \lstinline{map} is used in order to transform the content inside the \lstinline{Rackla} type from one type to another type. As an example, we saw in Figure \ref{fig:map} that we can apply a Base64 encoding to each individual image's data from many HTTP requests contained inside a \lstinline{Rackla} type.
+The function \lstinline{map} is used in order to transform the contents inside the \lstinline{Rackla} type from one type to another type. As an example, we saw in Figure \ref{fig:map} that we can apply a Base64 encoding to each individual image's data from many HTTP requests, contained inside a single \lstinline{Rackla} type.
 
 \subsubsection{Flat map}
-The function \lstinline{flat_map} works like \lstinline{map} with the exception that the returned type inside it has to be a new \lstinline{Rackla} type. The naive approach is to just wrap the returned type using \lstinline{just}, but more appropriate is to use this function when you want to utilise the \lstinline{response} function inside.
+The function \lstinline{flat_map} works like \lstinline{map} with the exception that the returned type inside its anonymous lambda function has to be a new \lstinline{Rackla} type. The naive approach is to wrap the returned type using \lstinline{just}, but a more appropriate usage is to utilise this function when you want to initiate another \lstinline{request} pipeline inside a transformation.
 
 \begin{figure}[H]
   \centering
@@ -699,13 +697,13 @@ The function \lstinline{flat_map} works like \lstinline{map} with the exception 
 end)
 |> response
 \end{lstlisting}
-  \caption{A new pipeline can be built inside the flat\_map function.}
+  \caption{A new \lstinline{request} pipeline can be constructed inside the \lstinline{flat_map} function.}
 \end{figure}
 
-In the above figure we make an HTTP request to an end-point which will return a response. By then using \lstinline{flat_map}, we can create one or more additional requests from the response by creating a new pipeline inside the \lstinline{flat_map} function. This enables us to define recursive request structures which later boils down to a single response.
+In the figure above we make an HTTP request to an end-point which will return a response. By then using \lstinline{flat_map}, we can create one or more additional requests from the response by creating a new \lstinline{request} pipeline inside the \lstinline{flat_map}'s anonymous lambda function. This enables us to define recursive request structures which later boils down to a single response.
 
 \subsubsection{Reduce}
-The function \lstinline{reduce}, or sometimes called \lstinline{fold}, is a way to take a collection of values and \enquote{reduce} them into to a single value. Rackla provides a \lstinline{reduce} function which reduces the values contained inside its own type into a single value. An example of this is when several responses from HTTP requests are reduced into a single value of some type.
+The function \lstinline{reduce}, or sometimes called \lstinline{fold}, is a way to take a collection of values and \enquote{reduce} them into to a single value. Rackla provides a \lstinline{reduce} function which reduces the values contained inside its own \lstinline{Rackla} type into a single value. An example of this is when several responses from HTTP requests are reduced into a single value of some type.
 
 \begin{figure}[H]
   \centering
@@ -716,14 +714,14 @@ Enum.reduce([1,2,3], &(&1 + &2))
 \end{figure}
 
 \subsubsection{Collect}
-Sometimes we may want to to break out of the asynchronous \lstinline{Rackla} type. In these cases, we can use the function \lstinline{collect} which takes a \lstinline{Rackla} type and returns the containing value or values as a list if there are more than underlying value.
+Sometimes we may want to to break out of the asynchronous \lstinline{Rackla} type and convert it to a native Elixir type. In these cases, we can use the function \lstinline{collect} which takes a \lstinline{Rackla} type and returns the containing value---or values as a list if there are more than underlying value.
 
 \clearpage
 
 \pagebreak
 
 \subsection{A complete example}
-To conclude this section, we will look at a complete end-point which uses the Instagrams API. We will present the code below and then explain what happens line by line. This is a complex end-point which uses most of the techniques defined in Rackla.
+To conclude this section, we will look at a complete end-point which uses the Instagram API\cite{instagram_api}. We will first present the code below and then explain what happens line by line. This is a complex end-point which uses many of the techniques defined in Rackla.
 
 \begin{figure}[H]
   \centering
@@ -774,53 +772,53 @@ end
 
 \begin{itemize}
 
-\item Line 1: we define our new HTTP end-point which we name \lstinline{/instagram}.
+\item Line 1: we define our new HTTP end-point which we name \lstinline{/instagram}. We use the macro \lstinline{get} defined in \lstinline{Plug} in order to listen to GET HTTP requests on the defined URL.
 
-\item Line 2--4: we create our first pipeline. What we want to do is to first send some HTML tags which will make the response a valid HTML conforming response. Normally we would not do this since we are working with API responses---but in this case to illustrate an example, we will create a complete HTML response page. We do this by storing the HTML code in a string, use the function \lstinline{just} to turn it in to a \lstinline{Rackla} type and pipe it to the \lstinline{response} function. Since the pipeline is ended with a \lstinline{response} function, it is immediately sent to the client before moving on.
+\item Line 2--4: we create our first pipeline. What we want to do is to first send some HTML tags which will make the response a valid HTML document (normally we would not do this since we are working with API responses, but this serves as a good example). We do this by storing the HTML code in a string, use the function \lstinline{just} to turn the string into a \lstinline{Rackla} type and pipe it to the \lstinline{response} function. Since the pipeline is ended with a \lstinline{response} function, it is immediately sent to the client before moving on to the following pipelines.
 
-\item Line 6: we define the underlying back-end URL to the end-point we wish to use. The end-point requires an access token which we pass to it by letting the client supply it as the query string.
+\item Line 6: we define the underlying back-end URL which points to the end-point that we wish to use. The end-point require an access token which we pass to it by letting the client supply it as the query string. The URL will return the current user's feed with a lot of data encoded in JSON format.
 
-\item Line 7: we pipe our URL to the \lstinline{request} function which will immediately return a \lstinline{Rackla} type while in the background execute the HTTP request.
+\item Line 7: we pipe our URL string to the \lstinline{request} function which will immediately return a \lstinline{Rackla} type while in the background executing the HTTP request.
 
-\item Line 8--34: we use \lstinline{flat_map} with an anonymous lambda function.
+\item Line 8--34: we use \lstinline{flat_map} with an anonymous lambda function---described below.
 
-\item Line 9: we pattern match on the response data from the http request. We know that the response will either be the actual response body from the API endpoint or an error tuple if case an error has occured. 
+\item Line 9: we pattern match on the response data from the HTTP request. We know that the response will either be the actual response body from the API endpoint or an error tuple if case an error has occurred since this behaviour is defined in Rackla.
 
-\item Line 10--11: if we receive an error, we will transmit the reason the error occured to the client. We have to call the \lstinline{just} function to convert it into a \lstinline{Rackla} type since it is required from the definition of\lstinline{flat_map}.
+\item Line 10--11: if we receive an error, we will transmit the reason why the error occurred to the client. We have to call the \lstinline{just} function to convert the reason type into a \lstinline{Rackla} type since it is required in the definition of \lstinline{flat_map}.
 
-\item Line 13: if we have reached this point in the code, then we know that we have gotten a valid HTTP response.
+\item Line 13: if we have reached this point in the code, then we know that we have gotten a valid HTTP response. We store the valid HTTP response in a variable called \lstinline{http_response}.
 
-\item Line 14: we pass the HTTP response data to the function \lstinline{Poison.decode} which will decode the response data from a JSON string to an Elixir data structure with an external library\cite{poison}. This conversion can fail as well so we will yet again pattern match on the outcomes of this operation.
+\item Line 14: we pass the HTTP response data to the function \lstinline{Poison.decode} which will decode the response data from a JSON string to an Elixir data structure by using the library Poison\cite{poison}. This conversion can also fail, if the response is not a valid JSON string, so we will yet again pattern match on the outcome of this operation.
 
-\item Line 15--16: we handle failing JSON decoding by just transmitting the failure reason to the client.
+\item Line 15--16: we handle the potential failing JSON decoding by transmitting the failure reason to the client.
 
 \item Line 18: we have successfully decoded the JSON string to an Elixir data structure. We store the decoded data in a variable called \lstinline{decoded_data}.
 
-\item Line 19--21: we transform the complete JSON response by extracting just the image URLs. This will leave us with a list of URLs pointing to images. It is worth pointing out that we are mixing types within the different stages of the pipeline and that we are actually working with both the built in Elixir types and the \lstinline{Rackla} type seamlessly.
+\item Line 19--21: we transform the data, from the JSON response, by extracting the URLs which points to images---all other data will be discarded. This will leave us with a list of URLs pointing to images. It is worth pointing out that we are using different types in the different stages of the pipeline---we are actually working with both the built in Elixir types and the \lstinline{Rackla} type seamlessly.
 
-\item Line 22: we pipe the list of URLs pointing to images to the \lstinline{request} function. It is important to notice what is happening here: we transform the response, from the outside pipeline's request, to be a new request pipeline which contain many requests. Also note that we are not providing any \lstinline{response} function here, we will instead use the \lstinline{response} function from the outer pipeline.
+\item Line 22: we pipe the list of URLs pointing to images to the \lstinline{request} function. It is important to notice what is happening here: we transform the response, from the outer pipeline's request, to be a new request pipeline which execute many requests. Also note that we are not providing any \lstinline{response} function in the inner pipeline, we will simply use the \lstinline{response} function from the outer pipeline.
 
 \item Line 23: we map over the results from our internal pipeline.
 
-\item Line 24: we pattern match again on the data. Since we have executed HTTP requests once again we may end up with failing DNS lookups and other problems which we have to handle.
+\item Line 24: once again we pattern match on the response data. Since we have executed HTTP requests once more we may end up with failing DNS lookups and other problems which we want to handle.
 
 \item Line 25--26: we handle the potential failing requests as before by transmitting the reason to the client.
 
 \item Line 28: we know that we have received a valid HTTP response which we store in the variable \lstinline{img_data}, in this case the response will contain binary image data since the URLs pointed to images.
 
-\item Line 29: we Base64 encode the image data and add wrap it in a HTML image tag which enables it to render directly on our page.
+\item Line 29: we Base64 encode the image data and add wrap it in a HTML image tag which enables us to render it directly on our page.
 
-\item Line 35: we end up in the \lstinline{response} function defined in the outer pipeline. This function will asynchronously receive the image HTML tags from our internal pipeline and transmit it to the client. It is important to underline the asynchronous behaviour we have defined here---the images will be sent in nondeterministic order which depends on the response order of the image requests.
+\item Line 35: we end up in the \lstinline{response} function defined in the outer pipeline. This function will asynchronously receive the image HTML tags from our internal pipeline and transmit them directly to the client. It is important to point out the asynchronous behaviour we have defined here---the images will be sent in a nondeterministic order which depends on the response order of the images requested in the internal pipeline.
 
-\item Line 37--39: we define our final pipeline which will send the closing HTML tags to the client. We are at this point guaranteed that these tags will be sent after every image has been transmitted since this final pipeline is defined separately from the previous pipelines---the asynchronous behaviour is only applicable inside the same pipeline.
+\item Line 37--39: we define a final pipeline which we will use to send the closing HTML tags to the client. We are at this point guaranteed that these tags will be sent after every image has been transmitted since this final pipeline is defined after, and separately from, the previous pipelines---the asynchronous behaviour is only applicable inside the same pipeline.
 
 \end{itemize}
 
-When we visit our new endpoint \lstinline{/instagram}, we will see a valid HTML page which will contain images fetched from Instagram. Since we use chunked transfer encoding, we will see every image as soon as it is sent from our API gateway. Since we are not using a deterministic ordering and simply send each image as soon as it is available, we will get a different ordering of the images every time we refresh the page.
+When we visit our new endpoint \lstinline{/instagram}, we will see a valid HTML page which will contain images fetched from Instagram. Since we use chunked transfer encoding, we will see each new image as soon as it is sent from our API gateway to the browser. The ordering will be nondeterministic since we will send every image as soon as it is available in the API gateway---we will most likely get a different ordering of the images every time we refresh the page.
 
 It is worth pointing out that even though we are requesting several images, there are only one request and one response sent between the client and the API gateway---even though there are several requests and responses sent between the API gateway and the back-end API.
 
-To conclude we should point out that we would perhaps in a real world application rather request the image data as Base64 encoded string in chunks and apply the HTML markup inside of the client's JavaScript code. By doing so we would not have to mix in any HTML in our API gateway. By specifying the image order in the chunks, the client could also chose render the images in the position in a grid even though the images arrives in a different order.
+To conclude, we should point out that we would, most likely, in a real world application only send the image's data as Base64 encoded chunks and apply the HTML markup inside of the client's code instead---by doing so we would not have to mix in any HTML markup in our API gateway. If we, in the API gateway, would attach the order when we send each chunks, the client could also render each received image in the appropriate position in a grid even though the images arrives in a out of order.
 
 \section{Related works}
 \subsection{Tyk}
