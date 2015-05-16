@@ -80,7 +80,7 @@ TODO...
 \theabstract{
 This thesis investigates the benefits and complications around working with API gateways. When we say API gateway, we mean to proxy and potentially enhance the communication between servers and clients, such as browsers, by transforming the data. We do this by examining the underlying protocol HTTP/1.1 and the general theory regarding API gateways.
 
-An API gateway framework was developed to help further understand some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to determine potential problematic areas and solve them in real world production systems. We could from these results see that the benefits of an API gateway varied from case to case, and with results in hand, predict in which scenarios API gateways are benefitial.
+An API gateway framework was developed to help further understand some of the common problems and provide a way to rapidly develop prototype solutions to them. This framework was then applied in three case studies in order to determine potential problematic areas and solve them in real world production systems. We could from these results see that the benefits of an API gateway varied from case to case, and with results in hand, predict in which scenarios API gateways are beneficial.
 }
 
 \keywords{API, gateway, proxy, communication, optimisation, performance, HTTP}
@@ -626,308 +626,201 @@ Plug is a specification for composable modules in between web applications---but
 \subsection{Hackney}
 Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users to simplify the API gateway development and ensure that it can be removed or replaced in future versions in necessary.
 
-\section{High-level concept}
+\section{Rackla overview}
 
-\subsection{Data structure}
-The data structure used in Rackla corresponds to that of an HTTP request. It consists of a numeric HTTP status code, such as 200 for OK\cite{http_status_codes}, headers which is an key-value map and an arbitrary amount of chunks which makes up the actual data payload of the HTTP request/response, in this document called the body (not to be confused with the HTML body-tag).
-
-In addition to this, a meta-data map is available for storing data outside the HTTP-model. This can be utilised to pass intermediate meta-data between requests which are not part of the requests themselves but utilised inside Rackla. 
-
-Lastly, there is also an error field which the user can utilise to handle all kinds of errors such as DNS lookup failures, non-responding back-ends but also thrown exceptions. A full description of the error handling mechanism is however outside the scope of this brief introduction.
-
-\subsection{Processes: producers and consumers}
-The key component in Rackla's asynchronous behaviour is the relationship between producers and consumers. Both consumers and producers are fully asynchronous Elixir processes which communicate by passing messages between each other. When a consumer is ready to receive data from a producer, it sends a message to the producer with its own identity and a status telling the producer that the consumer is ready to receive.
+\subsection{Pipeline}
+Pipelines is what ties all the pieces in Rackla together. The goal, when writing an API gateway using Rackla, is to describe the process as a sequence of steps. The simplest step is to proxy a request in the API gateway---that is to relay the request without modifying it. We can do that by first defining a URL to call, pipe it to the request function and then pipe it to the response function:
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-send(producer, { self, :ready })	
-\end{lstlisting}
-  \caption{The consumer sends a tuple with status \enquote{ready} and the identity of itself, using the function \lstinline{self()}, to the producer when it is ready to receive data.}
-\end{figure}
-
-The identity of the producer is always known to the consumer via an Elixir PID (process identification) which is passed around in the pipeline---the pipeline is explained below. The producer will only produce a response once and will terminate after a consumer has fully consumed the response.
-
-\begin{figure}[H]
-  \centering
-    \begin{center}
-      \includegraphics[width=0.9\textwidth]{images/crocpear_producer_consumer.png}
-    \end{center}
-  \caption{Message passing between a producer and a consumer. Time flows from left to right.}
-\end{figure}
-
-After the producer has been notified that a consumer is ready to consume its data, it must first respond with a message containing the HTTP status code, the headers- and the meta data map. After that, the payload chunks must be sent in order. Finally, a \enquote{done} message is sent to tell the consumer that the producer will terminate and all chunks has been sent.
-
-All Elixir processes, with the consumers and producers, are abstracted away from the user of the framework. Instead, the end-user only interacts with functions which are applied to all chunks combined on a per request basis. Abstracting away the concurrency model has no performance penalty while it does make the development a whole lot easier since the developer does not have to worry about the message passing. There is however nothing that hinders a developer to work on the lower process level if that for some reason is desired.
-
-\section{Pipeline}
-The pipeline is what ties all pieces in Rackla together. The pipeline follows a simple rule: every intermediate function in the pipeline should take a list of producer PIDs as its first argument and return a new list of producer PIDs as its only return value.
-
-The two exceptions are the functions \lstinline{request} and \lstinline{response} which usually are the beginning and the end of each pipeline. It is also possible to mix a Rackla pipeline with a normal function pipeline in Elixir---this is explored further in the examples below.
-
-\subsection{Request}
-The \lstinline{request} function in Rackla takes an arbitrary number of URLs as strings or a map structure if more advanced settings is needed such as specifying request headers, the HTTP methods such as GET, POST and so forth. The \lstinline{request} function will always return a list of producer PIDs. Each producer will produce the response from one HTTP request for the specified URL.
-
-\subsection{Response}
-The \lstinline{response} function takes a list of producers and turns them in to an actual HTTP response by utilising the provided data structure \lstinline{conn} in the library \lstinline{Plug}. If more than one producer is passed to the \lstinline{response} function, the first responding producer will be consumed first which means that the response order is nondeterministic---if not explicitly defined otherwise. However, the first responding producer will be consumed entirely before any other producer is consumed which guarantees that the chunks from different responses will not be mixed together.
-
-As soon as one of the chunks from a producer has been consumed by the response function, it will respond to the client with it by utilising the chunked HTTP response. Rackla only uses chunked responses which all HTTP/1.1 conforming clients must be able to handle\cite{chunked_required}. Note however that synchronous non-chunking requests, which can be made XMLHttpRequests in JavaScript, will still be able to handle the responses---the only exception is that they will not be able to gain any benefit from the chunking, but there is no downside either.
-
-\subsection{Transformers}
-Transformers is a concept used in Rackla to manipulate the response data from a request while it flows through the pipeline without exposing the underlying concurrency model---the Elixir processes and message passing.
-
-The transformer function takes a lambda function (a higher order function) as its only parameter. The lambda function is called with the response data structure as soon as its available as its only parameter which allows transformations to take place---the lambda function must finally return a (modified) response data structure.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-blanker = fn(response) ->
-  response
-  |> Map.update!(:status, fn(_discarded_status) -> 404 end)
-  |> Map.update!(:headers, fn(_discarded_headers) -> %{} end)
-  |> Map.update!(:body, fn(_discarded_body) -> "" end)
-  |> Map.update!(:meta, fn(_discarded_meta) -> %{} end)
-end
-\end{lstlisting}
-  \caption{The function blanker is a simple lambda function which can be used inside the transformer function. It sets the HTTP status code to 404 and removes all headers, the meta-data and the payload by simply ignoring the received values and providing the corresponding empty value instead. The actual data in the status, headers, meta and body are discarded by using an underscore at the start of the variable name in the function call \lstinline{Map.update!}.}
-\end{figure}
-
-\subsection{Timers}
-Rackla include timers which can be placed anywhere in the pipeline to benchmark the time it takes to reach the different stages. Timers can be used anonymously or with labels attached to them and they will output the data to the default Elixir logger. The timers also work on the underlying concurrency model which means that every single message passed between all of the asynchronous processes can be timed individually.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-10:41:57.437 [info]  {1424, 252517, 434960} (Got URL)
-10:41:58.187 [info]  {1424, 252518, 187494} [headers] (Executed request) on #PID<0.256.0>
-10:41:58.187 [info]  {1424, 252518, 187591} [status] (Executed request) on #PID<0.256.0>
-10:41:58.187 [info]  {1424, 252518, 187728} [chunk] (Executed request) on #PID<0.256.0>
-
-[...]
-
-10:41:59.529 [info]  {1424, 252519, 529096} [status] (Added transform function) on #PID<0.431.0>
-10:41:59.529 [info]  {1424, 252519, 529177} [headers] (Added transform function) on #PID<0.431.0>
-10:41:59.543 [info]  {1424, 252519, 543830} [chunk] (Added transform function) on #PID<0.431.0>
-10:41:59.544 [info]  {1424, 252519, 543943} [done] (Added transform function) on #PID<0.431.0>
-10:41:59.544 [info]  {1424, 252519, 544106} (Responded to query)
-\end{lstlisting}
-  \caption{The output from the logger. From left to right: time when message is logged, log level, Erlang timestamp \lstinline{\{MegaSecs, Secs, Microsecs\}}, [message atom] optional message (producer PID if present).}
-\end{figure}
-
-\subsection{Concatenate JSON}
-The function \lstinline{concatenate_json} takes a list with an arbitrary number of producers, consumes them and returns one new producer. The new producer's chunks will be the responses from the previous consumers, concatenated to a JSON list. Each chunk sent by the new producer will be one item from the JSON list, along with some JSON syntactical data.
-
-Each item in the list will be a JSON object which has five keys: status, headers, meta, body (payload) and error. Optionally, if a \enquote{true} value is passed in to the function, each item in the list only contain the \enquote{body} (payload)---the headers, meta, status and error will be discarded.
-
-
-\begin{figure}[H]
-  \centering
-    \begin{center}
-      \includegraphics[width=0.9\textwidth]{images/crocpear_concatenate_json.png}
-    \end{center}
-  \caption{Concatenate JSON creates one internal consumer for each producer. As soon as one consumer has consumed an entire response, the new producer will send that data as a chunk in the appropriate JSON format.}
-\end{figure}
-
-Even though \lstinline{concatenate_json} takes an arbitrary number of producer PIDs as its argument, it will itself only return one new producer as its result is one JSON list object.
-
-\section{Examples}
-\subsection{Request proxying}
-A simple proxy is a good introduction to demonstrates how the request / response pipeline can be utilised. In this example, we extract a URL from the query string from the connection and pipe it to the \lstinline{request} function which itself is piped into the \lstinline{response} function.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-conn.query_string
+"www.example.com"
 |> request
-|> response(conn)
+|> response
 \end{lstlisting}
-  \caption{A very simple proxy.}
+  \caption{A simple proxy which relay the entire payload untouched.}
 \end{figure}
 
-In a similar fashion, we could take an arbitrary number of requests and proxy all of them into one result. Here we take several URLs from the query string separated by the character \lstinline{|} and pipe all of them in to the \lstinline{request} and \lstinline{response} functions as before. By utilising Elixir's \lstinline{String.split}, a list of strings is created which is then passed into the \lstinline{request} function.
+\subsection{Monads and Functional programming}
+In order for the pipeline to work, a new type has to be defined. This type has to be able to handle multiple requests asynchronously while still enable us to modify the underlying values before they are sent to the clients.
+
+With these constraints, a new type was defined with inspiration taken from the concept of monads---a monad is a structure which represents computations as a sequence of steps.
+
+The new \lstinline{Rackla} type defines what it means to chain operations together using well established concepts used in functional programming such as \lstinline{map}, \lstinline{flat\_map} and \lstinline{reduce} with focus on still being asynchronous.
+
+To illustrate this, we can use Rackla to request two images over HTTP, transform the binary data by applying a Base64 encoding to them and finally replying to the client with the encoded data:
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-String.split(conn.query_string, "|")
+["url-to-image-1", "url-to-image-2"]
 |> request
-|> response(conn)
+|> map(&Base.encode64/1)
+|> response
 \end{lstlisting}
-  \caption{A simple proxy which works with an arbitrary number of URLs.}
+  \caption{Asynchronously transforming two images requested over HTTP to Base64 encoded data.}
+    \label{fig:map}
 \end{figure}
 
-This pipeline execute all the requests concurrently and start responding, in nondeterministic order, based on which one of the requests is responding first.
+It is worth pointing out here that the new \lstinline{Rackla} type allows this pipeline to be fully asynchronous, meaning that the response order sent to the client will depend on which of image urls is responding first and which of the Base64 encodings is performed the fastest. It can very well be the case that one Base64 encoded image has already been fully sent to the client while the other image is still being requested in the API gateway.
 
-\subsection{Concatenate responses to JSON}
-The \lstinline{concatenate_json} function can be used to concatenate several requests into one JSON list object. It will also automatically set the \enquote{Content-Type} header to the appropriate format \enquote{application/json}.
+\subsection{Function overview}
+We will now explain the most common functions defined in Rackla which enables us to build very flexible and powerful API gateways.
+
+\subsubsection{Request}
+The function \lstinline{request}, in the simple case, takes one or many URLs as strings and returns a \lstinline{Rackla} type. The data eventually contained inside the \lstinline{Rackla} type will correspond to either the result of the HTTP request or an error tuple if any error occur such as DNS lookup failures or non-responding back-ends.
+
+More advanced HTTP requests can be executed by instead passing one or many key-value maps to the \lstinline{request} function. By using a map, we can define which HTTP verb to use such as GET or POST, what timeout limits we want to use and how we want to handle insecure SSL connections. We can also, by using a key-value map, define custom request headers and attach a request body (payload).
+
+We can also define here if we want the \lstinline{Rackla} type to contain just the response body or a map containing, in addition to the response body, the response status code and response headers.
+
+Optionally, we can tell \lstinline{request} if we are interested in the entire HTTP response including the HTTP status code and the headers or if we, as is default, are only interesting in the body (payload).
+
+\subsubsection{Just}
+The function \lstinline{just} takes any existing type and encapsulates it inside a Rackla type. This function is useful when mixing already available data with eventually available data from HTTP requests.
+
+\subsubsection{Response}
+The function \lstinline{response} takes a \lstinline{Rackla} type and converts the underlying types to an HTTP response and sends it to the client. In order to conform to the asynchronous nature of Rackla, we only use chunked responses\cite{chunked}. We can pass in options in order to customise the response as well. Available options are: \lstinline{json} which automatically encodes the response as a JSON data structure, \lstinline{compress} which compresses the response using GZip compression, \lstinline{sync} which guarantees that the responses are sent in the same order as were requests were made, \lstinline{status} sets the response status code and \lstinline{headers} which defines the response headers used in the HTTP response.
+
+\subsubsection{Map}
+The function \lstinline{map} is used in order to transform the content inside the \lstinline{Rackla} type from one type to another type. As an example, we saw in Figure \ref{fig:map} that we can apply a Base64 encoding to each individual image's data from many HTTP requests contained inside a \lstinline{Rackla} type.
+
+\subsubsection{Flat map}
+The function \lstinline{flat_map} works like \lstinline{map} with the exception that the returned type inside it has to be a new \lstinline{Rackla} type. The naive approach is to just wrap the returned type using \lstinline{just}, but more appropriate is to use this function when you want to utilise the \lstinline{response} function inside.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-String.split(conn.query_string, "|")
+"example-url"
 |> request
-|> concatenate_json
-|> response(conn)
+|> flat_map(fn(response) -> 
+	"url-get-more-info-#{response}" 
+	|> request 
+end)
+|> response
 \end{lstlisting}
-  \caption{Demonstration of the concatenate\_json function.}
+  \caption{A new pipeline can be built inside the flat\_map function.}
 \end{figure}
 
-The response will be a JSON list in which each item contain the response's status, headers, meta data, potential error and the payload as an individual JSON objects.
+In the above figure we make an HTTP request to an end-point which will return a response. By then using \lstinline{flat_map}, we can create one or more additional requests from the response by creating a new pipeline inside the \lstinline{flat_map} function. This enables us to define recursive request structures which later boils down to a single response.
 
-\subsection{Transformers}
-In this more complex example, we will use all the previously explained techniques along with a \lstinline{transform} function to create a much more powerful end-point. We will go over the code from the Figure~\ref{fig:code_transformer} line by line.
+\subsubsection{Reduce}
+The function \lstinline{reduce}, or sometimes called \lstinline{fold}, is a way to take a collection of values and \enquote{reduce} them into to a single value. Rackla provides a \lstinline{reduce} function which reduces the values contained inside its own type into a single value. An example of this is when several responses from HTTP requests are reduced into a single value of some type.
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true,frame=single]
-get "/temperature" do
-  uris =
-    String.split(conn.query_string, "|")
-    |> Enum.map(&("http://api.openweathermap.org/data/2.5/weather?q=#{&1}"))
+Enum.reduce([1,2,3], &(&1 + &2))
+\end{lstlisting}
+  \caption{Illustration of how the \lstinline{reduce} function works inside the built in \lstinline{Enum} module in Elixir---the reduction will result in the value $6$ after performing the addition $1+2+3$. The \lstinline{reduce} defined by Rackla works in the same way but on a \lstinline{Rackla} type instead of a enumerable type.}
+\end{figure}
 
-  temperature_extractor = fn(item) ->
-    Dict.update!(item, :body, fn(body) ->
-      response_body = Poison.decode!(body)
+\subsubsection{Collect}
+Sometimes we may want to to break out of the asynchronous \lstinline{Rackla} type. In these cases, we can use the function \lstinline{collect} which takes a \lstinline{Rackla} type and returns the containing value or values as a list if there are more than underlying value.
 
-      Map.put(%{}, response_body["name"], response_body["main"]["temp"])
-      |> Poison.encode!
-    end)
-  end
+\clearpage
 
-  uris
+\pagebreak
+
+\subsection{A complete example}
+To conclude this section, we will look at a complete end-point which uses the Instagrams API. We will present the code below and then explain what happens line by line. This is a complex end-point which uses most of the techniques defined in Rackla.
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true,frame=single]
+get "/instagram" do
+  "<!doctype html><html lang=\"en\"><head></head><body>"
+  |> just
+  |> response
+
+  "https://api.instagram.com/v1/users/self/feed?count=50&access_token=" <> conn.query_string
   |> request
-  |> transform(temperature_extractor)
-  |> concatenate_json(true)
-  |> response(conn)
-end
-\end{lstlisting}
-  \caption{A complex example with a transformer.}
-  \label{fig:code_transformer}
-\end{figure}
-
-
-On line 1, we expose the new end-point \lstinline{/temperature} from the API gateway on which we will listen for incoming GET requests.
-
-On line 2--4, we intercept the city names and country codes, such as \lstinline{Lund,SE|Copenhagen,DK}, from the query string which is sent with the connection and then split them in to a list using the separating character: \lstinline{|}. This list is then mapped over which will result in the appropriate URLs to call for the underlying back-end API which we will use in this example.
-
-On line 6--13, we create a new transformer lambda function called \lstinline{temperature_extractor}. When we receive the actual payload data, the body, we will decode it from JSON format to native Elixir data structures by utilising the third-party library Poison\cite{poison}. We will create a new JSON object by extracting the name and temperature as a new key-value pair and encode it using Poison again---the rest of the payload data is discarded. The other response data: status, headers, error and meta, will be kept intact since our function only updates the data stored within they key \lstinline{:body}.
-
-On line 15--19, we tie everything together by creating a new pipeline. We take the URLs, pipe them into the \lstinline{request} function, pipe the result from the \lstinline{request} function in to the \lstinline{transform} function with our new lambda function \lstinline{temperature_extractor}, pipe the result from \lstinline{transform} in to the \lstinline{concatenate_json} function and finally pipe the result to the \lstinline{response} function which will respond to the client.
-
-In this example, we have used the performance enhancing techniques request/response concatenation, discarding of duplicate and unnecessary data, and provided a simple way for clients to request temperature data from multiple cities in one requests with a tailor made response.
-
-\subsection{Timers}
-Timers can be used anywhere in the pipeline to output timed logger information. In this example, we use the pipeline from the previous example and attach labels to all the timer functions in order to be able to separate them in the output.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-uris
-|> timer("got URIs")
-|> request
-|> timer("created requests")
-|> transform(temperature_extractor)
-|> timer("added transformer")
-|> concatenate_json(true)
-|> timer("concatenated to JSON")
-|> response(conn)
-|> timer("started responding")
-\end{lstlisting}
-  \caption{Utilising timers in the pipeline.}
-\end{figure}
-
-\noindent The logger for this pipeline would produce an output similar to:
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-10:47:49.795 [info]  {1424, 252869, 793251} (got URIs)
-10:47:49.815 [info]  {1424, 252869, 796360} [status] (concatenated to JSON) on #PID<0.311.0>
-10:47:49.821 [info]  {1424, 252869, 815637} [headers] (concatenated to JSON) on #PID<0.311.0>
-10:47:49.894 [info]  {1424, 252869, 890575} [headers] (created requests) on #PID<0.288.0>
-10:47:49.894 [info]  {1424, 252869, 894745} [headers] (created requests) on #PID<0.282.0>
-10:47:49.895 [info]  {1424, 252869, 891617} [headers] (created requests) on #PID<0.280.0>
-10:47:49.895 [info]  {1424, 252869, 891539} [headers] (created requests) on #PID<0.284.0>
-10:47:49.895 [info]  {1424, 252869, 894894} [status] (created requests) on #PID<0.282.0>
-
-[...]
-
-10:47:49.903 [info]  {1424, 252869, 903675} [chunk] (concatenated to JSON) on #PID<0.311.0>
-10:47:49.903 [info]  {1424, 252869, 903826} [done] (concatenated to JSON) on #PID<0.311.0>
-10:47:49.904 [info]  {1424, 252869, 903948} (started responding)
-\end{lstlisting}
-  \caption{Example output from using timers in a pipeline.}
-\end{figure}
-
-\subsection{Simple authentication}
-While security is at large outside the scope of this thesis (see page~\pageref{sec:security}), a small example was created to illustrate how a very simple security mechanism can work within Rackla.
-
-In this example, a username and password is retrieved from the URL---note that this is not secure and this simplified example should not be used in practice! We validate the credentials using a simple if statement and if the credentials are valid, then we create a new \enquote{HTTP Basic Auth} header with a predefined valid username and password (administrator / administrator) which we will use to authenticate ourselves with to back-end system.
-
-What this illustrates is that we can have different credentials for the API gateway and the back-end APIs. Rackla uses Plug which itself, and with third-party plugins, provides several authentication mechanisms such as sessions, cookies and HTTP basic auth.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-get "/http-basic-auth/:user/:password" do
-  headers =
-    if (user == "test_user" and password == "test_password") do
-      %{authorization: "Basic #{Base.encode64("administrator:administrator")}"}
-    else
-      %{}
+  |> flat_map(fn(response_data) ->
+    case response_data do
+      {:error, reason} ->
+        just(reason)
+        
+      http_response ->
+        case Poison.decode(http_response) do
+          {:error, reason} ->
+            just(reason)
+            
+          {:ok, decoded_data} ->
+            decoded_data
+            |> Map.get("data")
+            |> Enum.map(&(&1["images"]["standard_resolution"]["url"]))
+            |> request
+            |> map(fn(img_response) ->
+              case img_response do
+                {:error, reason} ->
+                  just(reason)
+                  
+                img_data ->
+                  "<img src=\"data:image/jpeg;base64,#{Base.encode64(img_data)}\" height=\"150px\" width=\"150px\">"
+              end
+            end)
+        end
     end
+  end)
+  |> response
   
-  %Rackla.Request{url: "https://api-url/", headers: headers}
-  |> request
-  |> response(conn)
+  "</body></html>"
+  |> just
+  |> response
 end
 \end{lstlisting}
-  \caption{Simple authentication example---not to be used in practice.}
+  \caption{A complete example end-point created with Rackla.}
 \end{figure}
 
-\subsection{Caching}
-Response caching can be added to Rackla. There are two places where it makes to most sense to add caching in the pipeline. Either we can substitute the \lstinline{request} function with a new \lstinline{request_cache} function or we can do the caching outside the pipeline. 
+\begin{itemize}
 
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-get "/proxy/multi/concat-json/cache" do
-  String.split(conn.query_string, "|")
-  |> request_cache
-  |> concatenate_json
-  |> response(conn)
-end
-\end{lstlisting}
-  \caption{Individual requests are cached independently of each other with the substitute function \lstinline{request_cache}.}
-\end{figure}
+\item Line 1: we define our new HTTP end-point which we name \lstinline{/instagram}.
 
-The new substitute function \lstinline{request_cache} can cache the requested URLs independently of each other. This means that if we have 50\% of the requests cached, we only have to perform the remaining 50\% requests. The draw-back with this approach is that only the \enquote{raw} responses from the back-end APIs are cached. This means that if we are doing any kind of transformations inside the pipeline, these will be performed on all results---including cached responses. One has to determine if these computations are negligible or if another caching approach has to be taken.
+\item Line 2--4: we create our first pipeline. What we want to do is to first send some HTML tags which will make the response a valid HTML conforming response. Normally we would not do this since we are working with API responses---but in this case to illustrate an example, we will create a complete HTML response page. We do this by storing the HTML code in a string, use the function \lstinline{just} to turn it in to a \lstinline{Rackla} type and pipe it to the \lstinline{response} function. Since the pipeline is ended with a \lstinline{response} function, it is immediately sent to the client before moving on.
 
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true,frame=single]
-get "/proxy/multi/concat-json/cache" do
-  cache_key = "some_unique_key"
-  
-  if (has_cache?(cache_key)) do
-    get_cache(cache_key)
-    |> response(conn)
-  else
-    String.split(conn.query_string, "|")
-    |> request
-    |> concatenate_json
-    |> response_cache(conn, cache_key)
-  end
-end
-\end{lstlisting}
-  \caption{Pseudo-code illustrating how an entire response can be cached.}
-\end{figure}
+\item Line 6: we define the underlying back-end URL to the end-point we wish to use. The end-point requires an access token which we pass to it by letting the client supply it as the query string.
 
-The second approach is to add the response to the cache right before it is sent to the client. This means that not only is the back-end API requests cached but all the computations and transformations as well. This means that the computations does not have to be executed again which was the case in the previous example. The draw-back with this approach is that the entire response is cached as one entity which means that if an end-point does 100 parallel requests where only one request differs, all requests has to be re-added to the cache for every change.
+\item Line 7: we pipe our URL to the \lstinline{request} function which will immediately return a \lstinline{Rackla} type while in the background execute the HTTP request.
 
-Both these proof-of-concept approaches are naive and there are many things which has to be considered before implementing a caching solution in a real world product such as how long responses should be cached and whether the client should be able to invalidate a cached item and so forth. 
+\item Line 8--34: we use \lstinline{flat_map} with an anonymous lambda function.
 
-In addition to this, the cache can also be used as a fail over solution where the cache is used only when a back-end server is down or if a request is failing for some reason such as a network failure. As mentioned in the previous section of caching (page \pageref{caching}), caching is a large and complex subject with many aspects which can not be covered in this thesis.
+\item Line 9: we pattern match on the response data from the http request. We know that the response will either be the actual response body from the API endpoint or an error tuple if case an error has occured. 
+
+\item Line 10--11: if we receive an error, we will transmit the reason the error occured to the client. We have to call the \lstinline{just} function to convert it into a \lstinline{Rackla} type since it is required from the definition of\lstinline{flat_map}.
+
+\item Line 13: if we have reached this point in the code, then we know that we have gotten a valid HTTP response.
+
+\item Line 14: we pass the HTTP response data to the function \lstinline{Poison.decode} which will decode the response data from a JSON string to an Elixir data structure with an external library\cite{poison}. This conversion can fail as well so we will yet again pattern match on the outcomes of this operation.
+
+\item Line 15--16: we handle failing JSON decoding by just transmitting the failure reason to the client.
+
+\item Line 18: we have successfully decoded the JSON string to an Elixir data structure. We store the decoded data in a variable called \lstinline{decoded_data}.
+
+\item Line 19--21: we transform the complete JSON response by extracting just the image URLs. This will leave us with a list of URLs pointing to images. It is worth pointing out that we are mixing types within the different stages of the pipeline and that we are actually working with both the built in Elixir types and the \lstinline{Rackla} type seamlessly.
+
+\item Line 22: we pipe the list of URLs pointing to images to the \lstinline{request} function. It is important to notice what is happening here: we transform the response, from the outside pipeline's request, to be a new request pipeline which contain many requests. Also note that we are not providing any \lstinline{response} function here, we will instead use the \lstinline{response} function from the outer pipeline.
+
+\item Line 23: we map over the results from our internal pipeline.
+
+\item Line 24: we pattern match again on the data. Since we have executed HTTP requests once again we may end up with failing DNS lookups and other problems which we have to handle.
+
+\item Line 25--26: we handle the potential failing requests as before by transmitting the reason to the client.
+
+\item Line 28: we know that we have received a valid HTTP response which we store in the variable \lstinline{img_data}, in this case the response will contain binary image data since the URLs pointed to images.
+
+\item Line 29: we Base64 encode the image data and add wrap it in a HTML image tag which enables it to render directly on our page.
+
+\item Line 35: we end up in the \lstinline{response} function defined in the outer pipeline. This function will asynchronously receive the image HTML tags from our internal pipeline and transmit it to the client. It is important to underline the asynchronous behaviour we have defined here---the images will be sent in nondeterministic order which depends on the response order of the image requests.
+
+\item Line 37--39: we define our final pipeline which will send the closing HTML tags to the client. We are at this point guaranteed that these tags will be sent after every image has been transmitted since this final pipeline is defined separately from the previous pipelines---the asynchronous behaviour is only applicable inside the same pipeline.
+
+\end{itemize}
+
+When we visit our new endpoint \lstinline{/instagram}, we will see a valid HTML page which will contain images fetched from Instagram. Since we use chunked transfer encoding, we will see every image as soon as it is sent from our API gateway. Since we are not using a deterministic ordering and simply send each image as soon as it is available, we will get a different ordering of the images every time we refresh the page.
+
+It is worth pointing out that even though we are requesting several images, there are only one request and one response sent between the client and the API gateway---even though there are several requests and responses sent between the API gateway and the back-end API.
+
+To conclude we should point out that we would perhaps in a real world application rather request the image data as Base64 encoded string in chunks and apply the HTML markup inside of the client's JavaScript code. By doing so we would not have to mix in any HTML in our API gateway. By specifying the image order in the chunks, the client could also chose render the images in the position in a grid even though the images arrives in a different order.
 
 \section{Related works}
 \subsection{Tyk}
