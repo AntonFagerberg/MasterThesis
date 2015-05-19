@@ -321,55 +321,39 @@ As an example, arbitrary user data\footnote{\url{https://gist.github.com/AntonFa
 An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1\cite{header_compression}. This means that the headers, including cookies, are not compressed which would have otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2\cite[page 19]{hpbn2}.
 
 \section{Further reading}
-High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media
+\subsubsection{High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media}
 
-\begin{quote}
-	The essential book about browser networking performance. It covers many aspects around browser networking and the limitations within the HTTP protocols which are essential to understan in the development of performance increasing API gateways.
-\end{quote}
+The essential book about browser networking performance. It covers many aspects around browser networking and the limitations within the HTTP protocols which are essential to understan in the development of performance increasing API gateways.
 
-\vspace{5mm}
+\subsubsection{HTTP/2: A New Excerpt from High Performance Browser Networking, Ilya Grigorik, 2015, O'Reilly Media}
 
-\noindent HTTP/2: A New Excerpt from High Performance Browser Networking, Ilya Grigorik, 2015, O'Reilly Media
+A new excerpt from the High Performance Browser Networking book. The new excerpt describes the new features in the HTTP/2 protocol such as the header compression and request/response multiplexing which has to be taken into consideration in API gateways.
 
-\begin{quote}
-	A new excerpt from the High Performance Browser Networking book. The new excerpt describes the new features in the HTTP/2 protocol such as the header compression and request/response multiplexing which has to be taken into consideration in API gateways.
-\end{quote}
+\subsubsection{High Performance Web Sites - Essential Knowledge for Front-End Engineers, Ilya Grigorik, 2007, O'Reilly Media}
 
-\vspace{5mm}
+Techniques for building high performing web sites. These techniques can also be applied inside API gateways.
 
-\noindent High Performance Web Sites - Essential Knowledge for Front-End Engineers, Ilya Grigorik, 2007, O'Reilly Media.
+\subsubsection{Even Faster Web Sites - Performance Best Practices for Web Developers, Ilya Grigorik, 2009, O'Reilly Media}
 
-\begin{quote}
-	Techniques for building high performing web sites. These techniques can also be applied inside API gateways.
-\end{quote}
+Follow-up book to High performance Web Sites with additional techniques which can be applied inside API gateways.
 
-\vspace{5mm}
-\noindent Even Faster Web Sites - Performance Best Practices for Web Developers, Ilya Grigorik, 2009, O'Reilly Media.
+\subsubsection{Nine Things to Expect from HTTP/2, Mark Nottingham, 2014, mnot's blog}
 
-\begin{quote}
-	Follow-up book to High performance Web Sites with additional techniques which can be applied inside API gateways.
-\end{quote}
-
-\vspace{5mm}
-\noindent Nine Things to Expect from HTTP/2, Mark Nottingham, 2014, mnot's blog
+A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, in which he briefly explores nine tings to expect from HTTP/2.
 
 \noindent \url{https://www.mnot.net/blog/2014/01/30/http2_expectations}
-
-\begin{quote}
-	A blog post from Mark Nottingham, chair of the IETF HTTP Working Group and a member of W3C TAG, in which he briefly explores nine tings to expect from HTTP/2.
-\end{quote}
 
 \chapter{API gateways in theory}
 When developing clients for back-end APIs, you often find that the client's needs and the back-end APIs functionality is not a perfect match. On top of that, different functionality is often required based on whether the client is a mobile application, a desktop application or something entirely different. The way the clients want to use the API can also radically differ based on what kind of product is being developed.
 
-Not being able to optimise the API for each individual clients needs can hurt the clients performance since it has to do a lot of extra work to refit the back-end's model to its own model---but it can also strain the developer who may have to refit the API for each new client.
+Not being able to optimise the API for each individual client's needs can hurt the clients performance since it has to do a lot of extra work to refit the back-end's model to its own model---but it can also strain the developer who may have to refit the API for each new client.
 
-Changing the back-end API is often not possible, perhaps especially in the enterprise environment where things can move slowly. The back-end can be a legacy system which is not allowed to changed, it might be impractical to adapt the back-end for different client types without breaking existing clients or the back-end development team might be strained for any other reason. 
+Changing the back-end API is often not possible, perhaps especially in the enterprise environment where things tend to move slowly. The back-end can be a legacy system where changes are not allowed to take place---it might be impractical to adapt the back-end for different client types without breaking existing clients or the back-end development team might be strained for any other reason.
 
 One approach to mitigate these problems is by utilising an API gateway as a new software layer between the clients and the back-end APIs. By introducing an API gateway, API calls can be modified in many different ways when they are transported between the client and the back-end API.
 
 \section{What is an API gateway?}
-An API gateway works on a layer between the clients and the servers. For an API gateway to be efficient, it has to be able to modify the communication between the clients and the servers, and by doing so, improve the clients and potentially also the servers performance.
+An API gateway works on a new layer between the clients and the servers. For an API gateway to be efficient, it has to be able to modify the communication between the clients and the servers, and by doing so, improve the clients and potentially also the servers performance.
 
 The focus in this thesis is to see how the clients can be optimised in terms of performance but also regarding code complexity and developer productivity. Little effort is taken to optimise the server---the goal is however not to put more strain on the server after introducing the API gateway but rather to keep it on the same level as before.
 
@@ -384,9 +368,9 @@ The focus in this thesis is to see how the clients can be optimised in terms of 
 \section{Differing client needs}
 We now, perhaps more than ever, have a vast variety of consumer devices such as mobile phones, tablets, desktop computers and other smart devices such as TVs---all of which often utilise the same APIs. One can imagine an API which returns a collection of the latest uploaded images to some service. 
 
-Since the screen size is drastically different on a mobile phone compared to a TV, the number of images the client wants to retrieve from the API can be very different. Depending on the type of client which is requesting the data, the API gateway can adapt the number of returned images.
+Since the screen size is drastically different on a mobile phone compared to a TV, the number of images the client wants to retrieve from the API can vary a lot. Depending on the type of client which is requesting the data, the API gateway can adapt the number of returned images.
 
-An approach similar to this has been implemented at Netflix where each client development team write their own \enquote{adaptor} code to fully optimise the underlying API for their clients specific needs\cite{netflix}. This concept works much like how an API gateway works---the main difference being whether the adaptors are actually part of the back-end system or in a new software layer.
+A similar approach has been implemented at Netflix where each client development team write their own \enquote{adaptor} code to fully optimise the underlying API for their client's specific needs\cite{netflix}. This concept works much like how an API gateway works---the main difference being whether the adaptors are actually part of the back-end system or in a new software layer.
 
 \section{Multiple resources and requests}
 A client often want to perform many requests simultaneously, either to one or multiple back-end APIs. A typical scenarios is when a user loads a single-page web application for the first time and the application's initial state has to be retrieved. Another typical example is when multiple resources, which are connected in some fashion, has to be loaded.
@@ -399,19 +383,19 @@ A client often want to perform many requests simultaneously, either to one or mu
   \caption{The API gateway receives a concatenated request which it distributes to multiple resources, the responses are then concatenated into a single response. The resources can either belong to one or several back-end systems.}
 \end{figure}
 
-When working with HTTP requests, there are multiple penalties for executing many small requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from http headers (page \pageref{headers}). 
+When working with HTTP requests, there are multiple penalties for executing many requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from HTTP headers (page \pageref{headers}). 
 
-Concatenating many HTTP requests to one request by utilising an API gateway enables us to avoid common problems such as the TCP connection limit and the header overhead. Concatenating requests can be seen directly in many modern API designs such as the Facebook Graph API\cite{facebook_batch_requests}---but for the APIs which lacks this feature, an API gateway can effectively mitigate these problems.
+We can, by utilising an API gateway to concatenate many HTTP requests, avoid these common problems. Concatenating requests can be seen directly in many modern API designs such as the Facebook Graph API\cite{facebook_batch_requests}---but for the APIs which lacks this feature, an API gateway can effectively mitigate these problems.
 
 \section{Duplicate and unnecessary items}
-When requesting data from a back-end API, the responses may contain unnecessary data which the client do not need. In a similar fashion, if a client performs several similar requests, it is possible that all the responses contains some amount of duplicate data. By utilising an API gateway, the results from the back-end API can be modified to remove the items which the different clients does not need.
+When requesting data from a back-end API, the responses may contain unnecessary data which the client do not need. In a similar fashion, if a client performs several similar requests, it is possible that all the responses contains some amount of duplicate data. By utilising an API gateway, the results from the back-end API can be modified to remove the items which the different clients do not need.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/api_gateway_duplicate.png}
     \end{center}
-  \caption{The client requests the items A, B, C, D. The API gateway fetches A, D from Resource 1---item A from the Resource 2's response can then be discarded since it's duplicate data. Item E, F from Resource 3 can be discarded since they are not wanted by the client at all. The API gateway can after retrieval respond with just the requested items A, B, C, D.}
+  \caption{The client requests the items A, B, C, D. The API gateway fetches A, D from Resource 1---item A from the Resource 2's response can then be discarded since it is duplicate data. Item E, F from Resource 3 can be discarded since they are not wanted by the client at all. The API gateway can after retrieval respond with just the requested items A, B, C, D.}
 \end{figure}
 
 \section{Format transformation}
@@ -422,15 +406,15 @@ When working with older legacy systems, the data can be formatted in a way which
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/api_gateway_transform.png}
     \end{center}
-  \caption{The client requests \enquote{user} in JSON-format. The API gateway fetches \enquote{user} in XML-format from the back-end, converts it to JSON and responds to the client.}
+  \caption{The client requests \enquote{user} in JSON-format. The API gateway fetches \enquote{user} in XML-format from the back-end, converts it to JSON and responds to the client with it.}
 \end{figure}
 
-The approach with using an API Gateway has the benefit that the conversion code does not have to be rewritten in every client. Rewriting the same conversion code, potentially in a new language or by using a different library, for each client increases the risk of introducing bugs. The reason for this is that different libraries works in different ways even though they solve the same problem, especially when there is no standardised mapping between two formats. Bugs are also introduced as the size of the code base grows when the same task has to be rewritten several times\cite[page 521]{code_complete}. 
+The approach of using an API Gateway has the additional benefit that the conversion code does not have to be rewritten in every client. Rewriting the same conversion code, potentially in a new language or by using a different library, for each client increases the risk of introducing bugs. The reason for this is that different libraries works in different ways even though they solve the same problem---especially when there is no standardised mapping between two formats. Bugs are also introduced as the size of the code base grows such as when the same task has to be rewritten several times\cite[page 521]{code_complete}. 
 
 By performing the transformations in the gateway, the processing work is moved away from the clients which can improve its performance as well as reducing the code size and its complexity.
 
 \section{Pure REST and HATEOAS}
-If an API follows the strict rules of REST\footnote{Representational State Transfer, see appendix.}, it must utilise the concept of HATEOAS\footnote{Hypermedia as the Engine of Application State, see appendix.}. Instead of defining and explicitly sharing a collection of end-points which the client can utilise, it requires the client to discover the resources itself by first performing a GET HTTP request to the APIs root URL. The back-end will respond with all the resources available from the root such as \enquote{users}. The client then has to query the \enquote{user's root} to discover which requests can be made in regards to the user's resource---and so forth. 
+If an API follows the strict rules of REST\footnote{Representational State Transfer, see appendix.}, it must utilise the concept of HATEOAS\footnote{Hypermedia as the Engine of Application State, see appendix.}. Instead of defining and explicitly sharing a collection of end-points which the client can call, it requires the client to discover the resources itself by first performing a GET HTTP request to the APIs root URL. The back-end will respond with all the resources available from the root such as \enquote{users}. The client then has to query the \enquote{user root} to discover which requests can be made in regards to the user resource---and so forth. 
 
 By forcing the client to discover all resources, the client developer has to do a lot of demanding work in the implementation phase\cite[page 62]{AASG}. This approach also introduces a lot of HTTP requests which increases the network traffic significantly.
 
@@ -441,7 +425,7 @@ API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/api_gateway_hateoas.png}
     \end{center}
-  \caption{The API gateway performs the pure REST HATEOAS communication. At the same, the API gateway exposes a simple end-point which the clients can utilise.}
+  \caption{The API gateway performs the pure REST HATEOAS communication. At the same, the API gateway exposes a simpler end-point which the clients can call.}
 \end{figure}
 
 \section{Compression}
@@ -492,15 +476,15 @@ Another approach to solve this is to place an API gateway inside the DMZ\footnot
 \end{figure}
 
 \section{Latency}
-One important goal of an API gateway is to reduce, or at least not significantly increase, the latency experienced in the communication between the client and the back-end server. Because of this, the placement of the API gateway in a network point of view is very important. (In all of the following scenarios, we treat LAN latency as negligible which should be a fair assumption.)
+One important goal of an API gateway is to reduce, or at least not significantly increase, the latency experienced in the communication between the client and the back-end server. Because of this, the placement of the API gateway from a network point of view is very important. (In all of the following scenarios, we treat LAN latency as negligible which should be a fair assumption.)
 
-The first approach we can look at is placing the gateway on the same LAN as the client. Placing the API gateway on the same machine as the client is rarely possible or practical---it complicates updating the gateway and defeats much its purpose of introducing a new layer between the client and server. 
+The first approach we look at is placing the gateway on the same LAN as the client. Placing the API gateway on the same machine as the client is rarely possible or practical---it complicates updating the gateway and defeats much its purpose of introducing a new layer between the client and server. 
 
 Placing the API gateway inside the same LAN as the client can be a good solution, for example when it is used inside a corporation's private network. The constraint with this approach is that no outside clients, such as smartphones not connected to the internal network, will be able to avoid the extra latency introduced over WAN\footnote{Wide Area Network, see appendix.}---or may not be able to connect to it at all based on the LAN security. This is however an approach which does not introduce double latency, but it does not decrease it either.
 
 The second approach is to place the API gateway as a separate application in its own cloud or on a LAN separated from the back-end and client. While this may be the only solution for certain hosting setups, this introduces the problem of double latency. Since the TCP-packets has to go through two WAN connections, both of them can introduce a substantial amount of latency which can worsen the response times.
 
-Finally, the third approach is to place the API gateway on the same LAN as the back-end system. This is in many cases the best approach as it avoids the problem regarding double latency while it at the same time provides access for outside clients and introduces flexibility in regards to updates. 
+Finally, the third approach is to place the API gateway on the same LAN as the back-end system. This is in many cases the best approach as it avoids the problem regarding double latency while it at the same time provides access for external clients and introduces flexibility in regards to updates. 
 
 The problem with double latency can however arise, and be unavoidable, if the API gateway is communicating with several back-end systems which are placed on different LANs. In such a scenario, several factors have to be considered before deciding which LAN to place the gateway in. Such factors include which back-end API has the most traffic, bandwidth costs between LANs, the latency between the different LANs and so forth.
 
@@ -517,24 +501,24 @@ An API gateway should be able to handle potential errors with different strategi
 
 Deciding what to do in more complex cases where several requests are concatenated or transformed together is much harder. The developer of the API gateway's end-point has to decide if a partial result is relevant for the client or if one failure should invalidate the entire combined result.
 
-Deciding to invalidate the entire result based on one request failure is problematic if the API gateway want to used chunked responses. Ideally, the API gateway want to transmit data to the client as soon as it is available but since chunks can not be retracted, the API gateway either has to wait for all back-end results to arrive before responding or introduce some kind of an error chunk which tells the client to discard the previously sent data.
+Deciding to invalidate the entire result based on one request failure is problematic if the API gateway uses chunked responses. Ideally, the API gateway want to transmit data to the client as soon as it is available but since chunks can not be retracted, the API gateway either has to wait for all back-end results to arrive before responding or introduce some kind of an error chunk which tells the client to discard the previously sent data.
 
-The API gateway developer always have to make the decision whether to handle much of the error complexity in the API gateway itself or delegate this responsibility to the client. These factors has to be considered on a case to case basis---there is no correct answer.
+The API gateway developer has to decide whether to handle much of the error complexity in the API gateway itself or delegate this responsibility to the client. These factors has to be considered on a case to case basis---there is no correct answer.
 
-\section{Security - authentication \& authorisation}
+\section{Security---authentication \& authorisation}
 \label{sec:security}
-API gateway security is, like all security scenarios, a very complex problem. All but the very simplest cases should be solved outside the implementation of the gateway itself in a trusted security solution. What makes an API gateway complex from a security point of view is the fact that a end-point exposed from the API gateway can communicate with several back-end systems, all of which can utilise different authentication and authorisation protocols. Because of this, a single sign-on service provided outside the API gateway itself is a good approach for the more complex API gateways which integrate with several back-end systems.
+API gateway security is, like all security scenarios, a very complex problem. All but the very simplest of cases should be solved outside the implementation of the gateway itself. What makes an API gateway complex from a security point of view is the fact that an end-point exposed from the API gateway can communicate with several back-end systems, all of which can utilise different authentication and authorisation protocols. Because of this, a single sign-on service provided outside the API gateway itself is a good approach for the more complex setups which communicates with several back-end systems.
 
-Any further in-depth discussion regarding this topic is outside the scope of this document and has therefore been excluded intentionally.
+Any further in-depth discussion regarding this topic is outside the scope of this thesis and has therefore been excluded intentionally.
 
 \section{Conditional back-ends}
 By utilising an API gateway, several different back-ends can be exposed as one single end-point. If we, for example, wanted to provide an API with weather reports from Sweden and Denmark but we have noticed that two different back-end APIs provide better reports for each country---one is better for Denmark and one is better for Sweden. With an API gateway, we can translate the incoming API-calls to the format required by the different back-ends and delegate the call based on certain inputs such as from where the API-call is made.
 
 \section{Rate limiting}
-API gateways can mitigate traffic spikes on back-end services by implementing a rate limit for API-calls. This can usually be done in many different ways as seen in Azure\cite{azure_rate_limit} and Apigee\cite{apigee_rate_limit}. Rate limiting strategies include a global rate limit, per client rate limit or a per token rate limit. This can also be seen from a business perspective where a certain number of calls are free but a fee has to be paid for subsequent calls.
+API gateways can mitigate traffic spikes on back-end services by implementing a rate limit for API-calls. This can usually be done in many different ways as seen in Azure\cite{azure_rate_limit} and Apigee\cite{apigee_rate_limit}. Rate limiting strategies include a global rate limit, a per client rate limit or a per token rate limit. This functionality is often used from a business perspective where a certain number of calls are free but a fee has to be paid for subsequent calls.
 
 \section{Support from old API versions}
-It happens that API developers makes changes which breaks backward compatibility when moving on to newer improved versions of the API. Fields can be added, renamed or removed. In such scenarios, old clients may be forced to update in order to work with these breaking API changes.
+It happens that API developers make changes which break backward compatibility when moving on to newer improved versions of the API. Fields can be added, renamed or removed. In such scenarios, old clients may be forced to update in order to work with these breaking API changes.
 
 Instead of rewriting many of the already released clients to fit the new API-version, an API gateway can, in some cases, be used to translate the new API format back to the old one. How feasible this is depends on what kind of changes that have been introduced and whether they are destructive or not.
 
@@ -545,25 +529,25 @@ API gateways are in a perfect position to collect data that can be used for anal
 
 \noindent API gateways can collect a lot of analytic data from HTTP requests and responses such as:
 \begin{itemize}
-	\item Client technology, the browsers user-agent which is sent with request headers is one way to collect a variety of data. The user-agent normally includes the browsers name and version, rendering engine, computer architecture and operating system.
-	\item Request-response time for both the client and each individual back-end API call.
+	\item Client technology: the browsers user-agent which is sent with request headers is one way to collect a variety of data. The user-agent normally includes the browsers name and version, rendering engine, computer architecture and operating system.
+	\item Request-response time for both the client and each individual back-end API calls.
 	\item Latency from different back-end APIs.
 	\item Geolocation from the HTML 5 geolocation API\cite{html5_geolocation} or by geolocating the requesting IP address.
 	\item Errors and failure rates for the back-end servers.
 	\item Invalid client requests.
 	\item Traffic peak hours.
-	\item Suspicious client behaviour such password- or denial of service attacks.
+	\item Suspicious client behaviour such password or denial of service attacks.
 \end{itemize}
 
-\noindent Since performance usually is a top priority in API gateways, the collected data should preferably be delegated, stored and processed using a third-party analytics engine.
+\noindent Since performance is usually a top priority in API gateways, the collected data should preferably be delegated, stored and processed using a third-party analytics engine.
 
 \section{Load balancing}
 API gateways can be used as load balancers to distribute workloads across multiple back-end systems. This can be achieved by implementing different scheduling algorithms---either by doing a simple round-robin or by implementing a more complex algorithm which takes additional factors into account such as the back-end systems reported load, response time, geolocation and so forth.
 
 \section{Related works}
 
-\subsection{Netflix API}
-Netflix has applied a concept similar to API gateways where each client team develops their own end-points adapted to the client's specific need.
+\subsubsection{Netflix API}
+Netflix has applied a concept, similar to API gateways, where each client's team develop their own end-points adapted to the client's specific needs.
 
 \vspace{5mm}
 
@@ -578,8 +562,8 @@ Netflix has applied a concept similar to API gateways where each client team dev
 \noindent \url{http://www.infoq.com/news/2013/02/netflix-api-optimization}
 
 
-\subsection{Managing API Performance, Apigee}
-Apigee, who works with API tool development, have put together a collection of articles with focus on optimising API performance in common scenarios.
+\subsubsection{Managing API Performance, Apigee}
+Apigee, who works with API tool development, have put together a collection of articles with focus on optimising API performance in common scenarios which are also applicable in API gateways.
 
 \vspace{5mm}
 
