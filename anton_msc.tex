@@ -994,7 +994,7 @@ However, another problem has been introduced with this approach which is that th
 
 Note that the algorithm from XML.com is just one approach to solve some of the problem around XML-JSON conversion---there are many additional issues which makes this conversion very complex. As with many things where there is no 1:1 mapping, different library developers and corporations are developing their own standards to handle the conversion.
 
-To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX\cite{jsonx} standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standards with different syntactical data. When these conversions are performed recursively with each output added to the others input, you would expect that the formats would stay the same, switching back and forth between JSON and XML---instead the data structure will grow indefinitely until the browser crashes since each format adds their own custom syntactical data to it.
+To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JSONx\cite{jsonx} standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standards with different syntactical data. When these conversions are performed recursively with each output added to the others input, you would expect that the formats would stay the same, switching back and forth between JSON and XML---instead the data structure will grow indefinitely until the browser crashes since each format adds their own custom syntactical data to it.
 
 In the end---the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
 
@@ -1071,13 +1071,13 @@ An API gateway can, like the client already does, automatically translate the XM
 When looking at the requests the client sends to the back-end API, we earlier concluded that the XML in many cases was unnecessary since all information describing data was already present in the URL in combination with the HTTP verb. By moving all XML-templates to the API gateway, all clients can utilise a much simpler API. An additional benefit to this approach is that all XML-templates are gathered in one place in contrast to the current approach where every client has to keep track of their own collection of templates.
 
 \chapter{Conclusions}
-As seen in the case studies, the API gateway concept is not a silver bullet and the need for an API gateway varies on a number of factors such as which technology is used in the client and back-end servers, and how well the API can be adapted to the clients' needs. We have also seen that API gateways can be used for many different purposes---from network performance issues to reducing code complexity and increasing developer productivity.
+As seen in the case studies, the API gateway concept is not a silver bullet and the need for an API gateway varies on a number of factors such as which technology is used in the client and the back-end servers, and how well the API can be adapted to the clients' needs. We have also seen that API gateways can be used for many different purposes---from network performance issues to reducing code complexity and increasing developer productivity.
 
-HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the need to change will not only be demanding for the browser- and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by SSL (HTTPS)\cite{http2_ssl}. This further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
+HTTP requests are still very \enquote{expensive} in HTTP/1.1 because of the substantial overhead from headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the need to change will not only be demanding for the browser and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by SSL (HTTPS)\cite{http2_ssl}. This will likely slow down the HTTP/2 adoption which further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
 
-We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the client's needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients---by placing the API gateways close to the back-ends, the network costs are negligible. 
+We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the clients' needs. There are many scenarios where the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients by placing the API gateways close to the back-ends where the network costs are negligible. 
 
-The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients can handle best, the API gateway can make the client development easier and less error prone while also boasting developer productivity.
+The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients can handle best, the API gateway can make the client development easier and less error prone while also boosting developer productivity.
 
 API gateways can also be helpful when designing new systems which has to support a variety of clients. This has been noticed in the architectural design implemented at Netflix\cite{netflix} which supports many different clients with different needs. In the case of Netflix, the client teams are responsible for developing their own end-points which serves their client a custom tailor-made response. This approach puts the same amount of work on the client and back-end developer teams but lessens the traffic costs, reduces the clients complexity and can increases overall performance.
 
@@ -1102,7 +1102,7 @@ JSON, JavaScript Object Notation, is a data-interchange text format based on a s
 XML, Extensible Markup Language, is a markup language used for encoding documents. It can be used as an alternative to JSON for data communication but it is also used in other areas and document formats.
 
 \section{REST}
-REST, Representational State Transfer, consists of guidelines and best practices for creating scalable web services. The style was developed by W3C Technical Architecture Group (TAG) in parallel with HTTP/1.1. RESTful systems often communicate over HTTP using so called HTTP verbs such as GET, POST, PUT, DELETE to send and retrieve data between clients and servers.
+REST, Representational State Transfer, consists of guidelines and best practices for creating scalable web services. The style was developed by the W3C Technical Architecture Group (TAG) in parallel with HTTP/1.1. RESTful systems often communicate over HTTP using so called HTTP verbs such as GET, POST, PUT and DELETE to send and retrieve data between clients and servers.
 
 \section{HATEOAS}
 HATEOAS, Hypermedia as the Engine of Application State, is a constraint in the REST architecture. The clients enter a REST application through a fixed URL and all future actions are discovered dynamically within resource representations sent from the server.
@@ -1111,7 +1111,7 @@ HATEOAS, Hypermedia as the Engine of Application State, is a constraint in the R
 DMZ, DeMilitarised  Zone, is an isolated subnet located outside the protected LAN where workstations and internal back-end systems are located. It is common that machines, which have to be directly exposed from the internet, are placed inside the DMZ.
 
 \section{SOAP}
-SOAP, Simple Object Access protocol, is an XML-based protocol used for data exchange. SOAP is primarily transported using with the underlying protocol HTTP but can also be used with other protocol such as the e-mail protocol SMTP.
+SOAP, Simple Object Access protocol, is an XML-based protocol used for data exchange. SOAP is primarily transported using HTTP but can also be used with other protocol such as the e-mail protocol SMTP.
 
 \section{Proxy}
 A proxy server acts as the intermediary between clients and servers by relaying the data between them.
@@ -1123,7 +1123,7 @@ LAN, Local Area Network, is a network limited to a smaller area such as a buildi
 WAN, Wide Area Network, is a network consisting of a large region such as a country or many countries. The internet is considered to be a WAN.
 
 \section{VPN}
-VPN, Virtual Private Network, is used to extend a private network, such as in a corporate environment, to an outside public network such as the internet.
+A VPN, Virtual Private Network, is used to securely extend a private network, such as the network inside a corporation, to an outside public network such as the internet.
 
 \end{appendices}
 
