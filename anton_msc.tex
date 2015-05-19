@@ -418,7 +418,7 @@ If an API follows the strict rules of REST\footnote{Representational State Trans
 
 By forcing the client to discover all resources, the client developer has to do a lot of demanding work in the implementation phase\cite[page 62]{AASG}. This approach also introduces a lot of HTTP requests which increases the network traffic significantly.
 
-API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS to a simpler API which only follows some of the restrictions put in place by the REST architectural principles. This can significantly lower the amount of traffic between the client and the back-end, which can be a big performance gain, especially in cases such as when there is a high latency between the client and the back-end---assuming that the latency between the API gateway and the back-end is low such as when they are placed inside the same LAN.
+API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS to a simpler API which only follows some of the restrictions put in place by the REST architectural principles. This can significantly lower the amount of traffic between the client and the back-end, which can be a big performance gain, especially in cases such as when there is a high latency between the client and the back-end---assuming that the latency between the API gateway and the back-end is low such as when they are placed inside the same LAN\footnote{Local Area Network, see appendix.}.
 
 \begin{figure}[H]
   \centering
@@ -573,7 +573,7 @@ Apigee, who works with API tool development, have put together a collection of a
 
 \chapter{Rackla: API gateway framework}
 
-The framework Rackla\footnote{\url{https://github.com/AntonFagerberg/rackla}} was developed in order to better understand and to be able to rapidly develop custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focuses on expanding existing public APIs from a business point of view with focus on monetisation, security and BaaS (backend as a service) using drag-and-drop graphical interfaces. 
+The framework Rackla\footnote{\url{https://github.com/AntonFagerberg/rackla}} was developed in order to better understand, and be able to rapidly develop, custom API gateways. Existing API gateway technologies, such as Microsoft Azure API Management\cite{azure_api_management}, Apigee Edge\cite{apigee_edge} and IBM API Management\cite{ibm_api_management}, mainly focuses on expanding existing public APIs from a business point of view with focus on monetisation, security and BaaS (backend as a service) using drag-and-drop graphical interfaces. 
 
 Rackla's focus, on the other hand, is from a pure technical point of view. Its goal is to help developers create their own custom API gateways programatically with a high degree of freedom and a small amount of abstractions which otherwise could limit the use cases.
 
@@ -584,7 +584,7 @@ Elixir is a functional language designed for building scalable and maintainable 
 Other important factors for choosing to use the language Elixir in this framework is the pipe operator, the asynchronous behaviour defined by Elixir processes and the functional programming aspect of the language.
 
 \subsection{The pipe operator}
-One important part of Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result from the expression on the left side of the operator and \enquote{pipes} it into the first argument of the right hand side function. People who are accustomed to Unix may see a similarity to the Unix pipe operator: \lstinline{|}.
+An important concept used in Elixir is the pipe operator: \lstinline{|>}. The pipe operator takes the result from the expression on the left side of the operator and \enquote{pipes} it into the first argument of the right hand side function. People who are accustomed to Unix may see a similarity to the Unix pipe operator: \lstinline{|}.
 
 \vspace{5mm}
 
@@ -606,21 +606,21 @@ Enum.sum(Stream.filter(Stream.map(1..100_000, &(&1 * 3)), odd?))
 \begin{lstlisting}[breaklines=true,frame=single]
 1..100_000 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum
 \end{lstlisting}
-  \caption{The same code as seen in Figure~\ref{fig:no_pipe} but expressed with the pipe operator.}
+  \caption{The same code as seen in Figure~\ref{fig:no_pipe} expressed with the pipe operator.}
 \end{figure}
 
 Another benefit of using the pipe-operator is that it makes you reason about the code in a more structured way. When you read it, you might say: \enquote{First I have the range of numbers, then I map over it, then I filter them, then I sum them}---which corresponds to how the code is written.
 
-The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, the minimalistic syntax used inside Rackla can make it look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the clients.
+The pipe operator is an important part in how Rackla works as it pipes requests to a response, potentially through transformations along the way. For developers who are not accustomed to Elixir, the minimalistic syntax used inside Rackla can make it look like an easy to read DSL (Domain Specific Language) in which they can expose end-points and pipe requests to the clients without writing a lot of boilerplate code.
 
 \subsection{Elixir processes}
 Processes are Elixir's term for utilising the \enquote{actor model} as its concurrency model. In Elixir, processes are extremely lightweight (in comparison with operating system processes) which means that it is not uncommon to have thousands of them running simultaneously. Elixir processes run concurrently, isolated from each other and can only communicate with message passing\cite{elixir_processes}.
 
 \subsection{Plug}
-Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol. Another benefit of using Plug is that already existing third-party code for handling things like cookie management and cross-origin requests can be reused inside Rackla.
+Plug is a specification for composable modules in between web applications---but also as connection adapters for different web servers in the Erlang VM\cite{plug}. In Rackla, Plug is utilised for exposing end-points to which the client can send requests, and a as a way for the API gateway to send responses back to the clients over the HTTP protocol. An additional benefit of using Plug is that already existing third-party code for handling things like cookie management and cross-origin requests can be reused inside Rackla.
 
 \subsection{Hackney}
-Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and is therefore abstracted away from the Rackla framework users in order to simplify the API gateway development and ensure that Hackney can be removed or replaced in future versions if necessary.
+Internally, Rackla uses the Erlang HTTP client library Hackney\cite{hackney} to send HTTP requests to back-end systems. Hackney is only used internally and it is therefore abstracted away from the Rackla framework users in order to simplify the API gateway development and ensure that Hackney can be removed or replaced in future versions if necessary.
 
 \section{Rackla overview}
 
@@ -642,7 +642,7 @@ A new type, which can be passed between the different functions, has to be defin
 
 With these constraints, a new type was defined with inspiration taken from the concept of monads (a monad is a structure, often used in functional programming, which represents computations as a sequence of steps).
 
-The new \lstinline{Rackla} type defines what it means to chain operations together using well established concepts used in functional programming such as \lstinline{map}, \lstinline{flat_map} and \lstinline{reduce} with focus on still being asynchronous.
+The new \lstinline{Rackla} type defines what it means to chain operations together using well established concepts commonly found in functional programming such as \lstinline{map}, \lstinline{flat_map} and \lstinline{reduce} with focus on still being asynchronous.
 
 To illustrate this, we can use Rackla to request two images over HTTP, transform the image's binary data by applying a Base64 encoding to them and finally responding to the client with the encoded data:
 
@@ -674,7 +674,7 @@ In addition to this, we can in the \lstinline{request} function define if we wan
 The function \lstinline{just} takes any existing type and encapsulates it inside a Rackla type. This function is useful when mixing already available data with eventually available data from HTTP requests.
 
 \subsubsection{Response}
-The function \lstinline{response} takes a \lstinline{Rackla} type and converts the underlying types to an HTTP response and sends it to the client. In order to conform to the asynchronous nature of Rackla, we only use chunked responses\cite{chunked}. We can pass in options in order to customise the response, available options are: \lstinline{json} which automatically encodes the response as a JSON data structure, \lstinline{compress} which compresses the response using GZip compression, \lstinline{sync} which guarantees that the responses are sent in a deterministic order, \lstinline{status} which defines the response's status code and \lstinline{headers} which defines which headers to send with the HTTP response.
+The function \lstinline{response} takes a \lstinline{Rackla} type and converts the underlying types to an HTTP response and sends it to the client. In order to conform to the asynchronous nature of Rackla, we only use chunked responses\cite{chunked}. We can pass in options in order to customise the response, available options are: \lstinline{json} which automatically encodes the response as a JSON data structure, \lstinline{compress} which compresses the response using GZip compression, \lstinline{sync} which guarantees that the responses are sent in a deterministic order, \lstinline{status} which defines the response's status code and \lstinline{headers} which defines the headers that will be sent with the HTTP response.
 
 \subsubsection{Map}
 The function \lstinline{map} is used in order to transform the contents inside the \lstinline{Rackla} type from one type to another type. As an example, we saw in Figure \ref{fig:map} that we can apply a Base64 encoding to each individual image's data from many HTTP requests, contained inside a single \lstinline{Rackla} type.
@@ -699,7 +699,7 @@ end)
 In the figure above we make an HTTP request to an end-point which will return some response. By using \lstinline{flat_map}, we can create one or more additional requests from the received response by creating a new \lstinline{request} pipeline inside the \lstinline{flat_map}'s anonymous lambda function. This enables us to define recursive request structures which later boils down to a single response.
 
 \subsubsection{Reduce}
-The function \lstinline{reduce}, or sometimes called \lstinline{fold}, is a way to take a collection of values and \enquote{reduce} them into to a single value. Rackla provides a \lstinline{reduce} function which reduces the values contained inside its own \lstinline{Rackla} type into a single value. An example of this is when several responses from HTTP requests are reduced into a single value of some type.
+The function \lstinline{reduce}, or sometimes called \lstinline{fold}, is a way to take a collection of values and \enquote{reduce} them into to a single value. Rackla provides a \lstinline{reduce} function which reduces the values contained inside its own \lstinline{Rackla} type into a single value (still contained inside a \lstinline{Rackla} type).
 
 \begin{figure}[H]
   \centering
@@ -710,7 +710,7 @@ Enum.reduce([1,2,3], &(&1 + &2))
 \end{figure}
 
 \subsubsection{Collect}
-Sometimes we might want to to break out of the asynchronous \lstinline{Rackla} type and convert it to a native Elixir type. In these cases, we can use the function \lstinline{collect} which takes a \lstinline{Rackla} type and returns the containing value---or all values in a list if there are more than one underlying value.
+Sometimes we may want to to break out of the asynchronous \lstinline{Rackla} type and convert it to a native Elixir type. In these cases, we can use the blocking function \lstinline{collect} which takes a \lstinline{Rackla} type and returns the containing value---or all values in a list if there are more than one underlying value.
 
 \clearpage
 
@@ -784,7 +784,7 @@ end
 
 \item Line 13: if we have reached this point in the code, then we know that we have gotten a valid HTTP response. We store the valid HTTP response in a variable called \lstinline{http_response}.
 
-\item Line 14: we pass the HTTP response data to the function \lstinline{Poison.decode} which will decode the response data from a JSON string to an Elixir data structure by using the library Poison\cite{poison}. This conversion can also fail, if the response is not a valid JSON string, so we will yet again pattern match on the outcome of this operation.
+\item Line 14: we pass the HTTP response data to the function \lstinline{Poison.decode} which will decode the response data from a JSON string to an Elixir data structure by using the library Poison\cite{poison}. This conversion can also fail if the response is not a valid JSON string, so we will yet again pattern match on the outcome of this operation.
 
 \item Line 15--16: we handle the potential failing JSON decoding by transmitting the failure reason to the client.
 
@@ -798,11 +798,11 @@ end
 
 \item Line 24: once again we pattern match on the response data. Since we have executed HTTP requests once more we may end up with failing DNS lookups and other problems which we want to handle.
 
-\item Line 25--26: we handle the potential failing requests as before by transmitting the reason to the client if they occur.
+\item Line 25--26: we handle the potential failing requests as before by transmitting the reason to the client if any error occur.
 
-\item Line 28: we know that we have received a valid HTTP response sp we store the response in the variable \lstinline{img_data}. In this case the response will contain binary image data since the URLs pointed to images.
+\item Line 28: we know that we have received a valid HTTP response so we store the response in the variable \lstinline{img_data}. In this case the response will contain binary image data since the URLs pointed to images.
 
-\item Line 29: we Base64 encode the image data and wrap it in a HTML image tag which enables us to render it directly in our browser when we call our new end-point.
+\item Line 29: we Base64 encode the image data and wrap it in a HTML image tag which enables it to render directly in the browser when we call our new end-point.
 
 \item Line 35: we end up in the \lstinline{response} function defined in the outer pipeline. This function will asynchronously receive the HTML image tags from our internal pipeline and transmit them directly to the client. It is important to point out the asynchronous behaviour we have defined here---the images will be sent in a nondeterministic order which depends on the response order of the images requested in the internal pipeline.
 
@@ -812,12 +812,12 @@ end
 
 When we visit our new endpoint \lstinline{/instagram}, we will see a valid HTML page which will contain images fetched from Instagram. Since we use chunked transfer encoding, we will see each new image as soon as it is sent from our API gateway to the browser. The ordering will be nondeterministic since we will send every image as soon as it is available in the API gateway---we will most likely get a different ordering of the images every time we refresh the page.
 
-It is worth pointing out that even though we are requesting several images, there are only one request and one response sent between the client and the API gateway---even though there are several requests and responses sent between the API gateway and the back-end API.
+It is worth pointing out that even though we are requesting several images, there is only one request and one response sent between the client and the API gateway---even though there are several requests and responses sent between the API gateway and the back-end API.
 
-To conclude, we should point out that we would, most likely, in a real world application only send the image data as Base64 encoded chunks and apply the HTML markup inside of the client's code instead---by doing so we would not have to mix in any HTML markup in our API gateway. If we, in the API gateway, would attach the order when we send each chunks, the client could also render each received image in the appropriate position in a grid even though the images arrive out of order.
+To conclude, we should point out that we would, most likely, in a real world application only send the image data as Base64 encoded chunks and apply the HTML markup inside of the client's code instead---by doing so we would not have to mix in any HTML markup in our API gateway. If we, in the API gateway, would attach the ordering when we send each chunks, the client could also render each received image in the appropriate position in a grid even though the images arrive out of order.
 
 \section{Related works}
-\subsection{Tyk}
+\subsubsection{Tyk}
 
 Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like Rackla, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful.
 
@@ -825,7 +825,7 @@ Tyk is an open source API gateway written in Go which enables you to control who
 
 \noindent \url{https://tyk.io/}
 
-\subsection{LoopBack-Gateway}
+\subsubsection{LoopBack-Gateway}
 
 LoopBack-Gateway is an experimental, minimum viable product, API gateway developed by StrongLoop. It is written in JavaScript using Node.js and focuses on rate limiting, reverse proxying and security.
 
@@ -1113,6 +1113,9 @@ SOAP, Simple Object Access protocol, is an XML-based protocol used for data exch
 
 \section{Proxy}
 A proxy server acts as the intermediary between clients and servers by relaying the data between them.
+
+\section{LAN}
+LAN, Local Area Network, is a network limited to a smaller area such as a building or an office.
 
 \section{WAN}
 WAN, Wide Area Network, is a network consisting of a large region such as a country or many countries. The internet is considered to be a WAN.
