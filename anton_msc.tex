@@ -835,24 +835,24 @@ LoopBack-Gateway is an experimental, minimum viable product, API gateway develop
 
 \chapter{Cases studies}
 
-Three systems was evaluated in order to find potential usage areas for API gateways in real-world products. The goal was to look at the three systems from different view points; when two systems have common problems, then it will only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
+Three systems were evaluated in order to find potential usage areas for API gateways in real-world products. The goal was to look at the three systems from different view points; if two systems have a common problem, then it will only be mentioned in one of the case studies. The reasoning behind this was to highlight the different usage potential for API gateways.
 
 \section{Streamflow}
 Streamflow\cite{streamflow} is a system used within municipalities in order to communicate with its citizens and inside organisations to communicate with their customers. It is primarily used to register and track customer cases and works as a central case management hub.
 
-Streamflow exposes a HATEOAS REST API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing---however, a new web-client written using AngularJS\footnote{JavaScript Framework developed by Google.} is currently under development. The following case study has used the in-development AngularJS client using the existing production API which uses HTTP/1.1.
+Streamflow exposes a HATEOAS REST API with JSON-encoded responses. The desktop client for Streamflow was written in Java using Swing---however, a new web-client written using AngularJS, a JavaScript Framework developed by Google, is currently under development. The following case study used the in-development AngularJS client with the current production API over HTTP/1.1.
 
 \subsection{Case lists}
-In Streamflow, incoming cases are automatically categorised according to the rules defined by the municipality or organisation. Each category has two folders: \enquote{inbox} and \enquote{my cases}. When clicking on the \enquote{inbox} or \enquote{my cases} for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
+In Streamflow, incoming cases are automatically categorised according to rules defined by the municipality or organisation. Each category has two folders: \enquote{inbox} and \enquote{my cases}. When clicking on the \enquote{inbox} or \enquote{my cases} for a category, all cases in that folder will be fetched from the server and the results will be displayed in a list.
 
 \subsection{Evaluation}
 When viewing the case list, several recursive requests will be executed from the client in order to collect all the required information and in order to follow the HATEOAS specification (the first steps in the request chain has been omitted):
 
 \begin{enumerate}
 	\item Request a list of all cases in the selected category and folder. This will return a list of case-objects which are 0.9~KB per object.
-	\item For each case in the list, request the case information. This will return the same case-object once more. The reason for executing this request is to discover the next hypermedia resource called \enquote{general}. The wanted payload, the \enquote{general} resource, is 94~bytes while the total response is 3.5--4~KB. This results in a overhead of roughly 97.5\% unnecessary data for each request.
+	\item For each case in the list, request the case information. This will return the same case-object once more with additional meta data. The reason for executing this request is to discover the next hypermedia resource called \enquote{general}. The wanted payload, the \enquote{general} resource, is 94~bytes while the total response is 3.5--4~KB. This results in a overhead of roughly 97.5\% unnecessary data for each request.
 	\item Request the \enquote{general} resource for each case. From this response, the client wants two fields: a date and a note. If a priority is present, the client also wants the next resource called priorities. The total response is 1.5--2~KB and the wanted data is 130~B resulting in a unwanted overhead of roughly 92.5\% for each request.
-	\item If the cases has a defined priority, that priority has to be requested. This response is 293~B and will contain information about all priority levels, usually four levels. Each case only has one priority which results in a 75\% overhead for each request.
+	\item If the cases has a defined priority, that priority has to be requested. This response is 293~B and will contain information about all priority levels, usually four levels. A case can only have one priority which results in a 75\% overhead for each request.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -860,23 +860,23 @@ When viewing the case list, several recursive requests will be executed from the
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/streamflow_cases.png}
     \end{center}
-  \caption{How the recursive requests are executed in the Streamflow web client in order to fetch all needed resources and comply with HATEOAS in the REST architectural specification.}
+  \caption{How the recursive requests are executed in the Streamflow web client in order to fetch all needed resources and to comply with HATEOAS in the REST architectural specification.}
 \end{figure}
 
-By placing an API gateway developed with Rackla in between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated, for the client, to one request with a single response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
+By placing an API gateway developed with Rackla between the Streamflow web-client and the Streamflow API, all recursive requests can be concatenated, for the client, to one request with a single response. By doing so, a lot of unnecessary data can also be discarded before it is sent to the client. This unnecessary data is duplicate data such as the duplicate case-information, irrelevant data for the client such as HATEOAS discovery information and unneeded data such as unused priorities.
 
-In the test environment, measurements where made on a list which contained 156 cases. For this list, the client had to execute 373 requests: 1 request for the list, 156 requests for each case to get the location of the \enquote{general} resource, 156 requests for the \enquote{general} resource for each case, and 60 \enquote{priority} requests for the cases which needed that information. All these request where replaced with one single request to the API gateway which took care of the HATEOAS communication. By doing so, the total transmitted data was reduced from 1,100~KB to 159~KB---a 86\% decrease of transmitted data.
+In the test environment, measurements were made on a list which contained 156 cases. For this list, the client had to execute 373 requests: 1 request for the list, 156 requests for each case to get the location of the \enquote{general} resource, 156 requests for the \enquote{general} resource for each case, and 60 \enquote{priority} requests for the cases which needed that information. All these request where replaced with one single request to the API gateway which took care of the HATEOAS communication. By doing so, the total transmitted data was reduced from 1,100~KB to 159~KB---a 86\% decrease of transmitted data.
 
 The Streamflow API does not compress any of the responses. By adding Gzip compression to the payload inside the API gateway before responding to the client, the data could be reduced even more, from 1,100~KB to 9.9~KB, which amounts to a 99\% decrease of transmitted data.
 
-In addition, the client also had to transform certain data types after retrieving them from the server so that it would fit in its internal model. For example, the field \enquote{dueOn} was truncated from \enquote{2015-02-17T23:59:59.000Z} to \enquote{2015-02-17} since the time part was not relevant for the client. By utilising the API gateway, these transformations could be taken care of before replying to the client. This means that no, potentially demanding and error prone, transformations had to be performed on the client---instead the data from the response could be used directly.
+In addition to this, the client also had to transform certain data types after retrieving them from the server so that it would fit in its internal model. For example, the field \enquote{dueOn} was truncated from \enquote{2015-02-17T23:59:59.000Z} to \enquote{2015-02-17} since the time part was not relevant for the client. By utilising the API gateway, these transformations could be taken care of before replying to the client. This means that no, potentially demanding and error prone, transformations had to be performed on the client---instead the data from the response could be used directly.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \includegraphics[width=0.9\textwidth]{images/streamflow_response.png}
     \end{center}
-  \caption{Illustration of the responses (case, general and priorities) from Streamflow. The actual data needed in the list view is highlighted in order to show how much unnecessary data that was transmitted.}
+  \caption{Illustration of the responses (case, general and priorities) from Streamflow. The actual data needed in the list view is highlighted in order to illustrate how much unnecessary data that was transmitted.}
 \end{figure}
 
 In the production environment, a measurement was made in order to determine the number of cases present in the municipality of Jönköping at a given time of the day. On average, the number of cases in the non-empty inboxes was 19 and the maximum number of cases in one inbox was 296. This means that on average, the number of requests performed, every time an inbox is checked from the client, is roughly 40--60. When the largest inbox is viewed, the number of requests will be somewhere between 600--900---every time it is clicked. This is a substantial performance bottleneck for all clients, especially browsers using HTTP/1.1 considering the TCP max-connection limit and the various textual overheads.
@@ -884,7 +884,7 @@ In the production environment, a measurement was made in order to determine the 
 It should be noted that the final version of the web-client will most likely be limited to displaying 10--20 cases at a time using pagination. This would reduce the number of requests to 20--60 for any given inbox view. This is however still a substantial amount of HTTP requests to perform every time a user checks an inbox. This approach will neither address the problem that 86\% of the transferred data is unnecessary overhead.
 
 \section{Bank App}
-The second system Rackla was evaluated with was a banking app for an undisclosed major bank in Sweden, here after simply called \enquote{Bank App}. Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a modern and well designed API from the start adapted to the needs of the clients. Further on, the clients were written as hybrid apps where common web technologies could be shared among the different platforms and only a small amount of native components had to be changed.
+The second system evaluated was a banking app for an undisclosed major bank in Sweden, here after simply called \enquote{Bank App}. Bank App is a mobile app with clients for iOS, Android and Windows Phone. What made the Bank App interesting, from the API gateway point of view, was that it already had a modern and well designed API, which was adapted to the needs of the clients, from the start. Additionally, the clients were written as hybrid apps in which common web technologies could be shared among the different platforms and only a small amount of native components had to be rewritten.
 
 \subsection{Transaction overview}
 An essential part of the application is the transaction overview which is where the users can view their balance, orders, fund orders, trades and transactions.
@@ -912,7 +912,7 @@ What made the Bank App special was that the different mobile platforms shared a 
 
 If the Bank App instead would have been developed using native code, we would see that the fetching and transforming code had to be rewritten for each platform in a new language. If we draw a parallel to the industry average defect rate, about 1--25 errors per 1000 lines of code\cite[page 521]{code_complete}, this means that every new client platform introduced to the transaction overview would potentially create 0.1--2.5 new bugs---a number which could be reduced if the code only had to be written once in the API gateway instead.
 
-Perhaps more importantly, by moving the code to the API gateway means that the combined codebase would not just be less error prone but would also be more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API gateway and avoid updating every client. 
+Perhaps more importantly, moving the code to the API gateway means that the combined codebase would not just be less error prone but it would also be more maintainable. If we, to take one example, wanted to sort the accounts in descending order rather than ascending, we could change this code once in the API gateway and avoid updating every client. 
 
 If this code was instead located in the clients, all of them had to be updated individually, probably by different teams, and each of them submitted to the various app stores for a potentially long review process.
 
@@ -929,7 +929,7 @@ Accountant System is a code name for a system used by a large Swedish accountant
 \subsection{Working with XML in JSON clients}
 \label{xml_json}
 
-When it comes to converting XML to JSON, and vice versa, there is no standardised approach which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data transmission, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
+When it comes to converting XML to JSON, and vice versa, there is no standardised approach which can be applied to make the conversions uniform. Even though the formats do solve some of the same problems in regards to data encapsulation, the semantics and features are inherently different and it is therefore impossible to create a 1:1 mapping between the two formats.
 
 In an article from XML.com\cite{xml_json} which was published by O'Reilly Media, a conversion algorithm was developed to highlight some of the issues regarding this topic. One of the examples started with a very simple XML structure defined in Figure~\ref{fig:xml_structure}.
 
@@ -984,7 +984,7 @@ The problem with the JSON structure in Figure~\ref{fig:xml_wrong} is that we can
 However, another problem has been introduced with this approach which is that the element order is no longer perserved. If we would iterate over the values in the XML from Figure~\ref{fig:xml_structure}, we would end up with \enquote{some, textual, content} but when we iterate over our JSON-structure from Figure~\ref{fig:json_wrong} we would end up with \enquote{some, content, textual} which is not the desired result.
 
 \vspace{5mm}
-\noindent Based on this, the following conclusions was made by XML.com:
+\noindent Based on this, the following conclusion was made by XML.com:
 
 \begin{quote}
 
@@ -994,7 +994,7 @@ However, another problem has been introduced with this approach which is that th
 
 Note that the algorithm from XML.com is just one approach to solve some of the problem around XML-JSON conversion---there are many additional issues which makes this conversion very complex. As with many things where there is no 1:1 mapping, different library developers and corporations are developing their own standards to handle the conversion.
 
-To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standards with different syntactical data. When these conversions are performed recursively with each output added to the others input, you would expect that the formats would stay the same, switching back and forth between JSON and XML---instead the data structure will grow indefinitely until the browser crashes because each format adds their own custom syntactical data to it.
+To humorously illustrate this problem, a tool was created\cite{jsonx_jsonml} which converted JSON to XML with IBM's JsonX\cite{jsonx} standard and then back to JSON from XML with JsonML's\cite{jsonml} standard. These tools follow their own defined conversion standards with different syntactical data. When these conversions are performed recursively with each output added to the others input, you would expect that the formats would stay the same, switching back and forth between JSON and XML---instead the data structure will grow indefinitely until the browser crashes since each format adds their own custom syntactical data to it.
 
 In the end---the point is that converting XML to JSON, and vice versa, is troublesome and since there is no 1:1 mapping, it is handled differently in the variety of libraries used today.
 
@@ -1003,10 +1003,10 @@ In Accountant System, the XML-JSON conversion was handled in two different ways-
 
 \subsubsection{Response}
 
-When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which then could be used as JavaScript objects in the views, often after some transformations. As in the previous examples, this adds additional complexity to the client which now has to transform the responses before they can be properly handled by the client.
+When working with XML responses from the API, the client utilised a third-party library which converted the XML responses to JSON which then could be used as JavaScript objects in the views, often after some transformations. As in the previous examples, this adds additional complexity to the client which now has to transform the responses before it can handle them properly.
 
 \subsubsection{Request}
-More interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT and DELETE which indicates how the underlying resource should be manipulated. In addition to this, we have an end-point which we communicate with via a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
+More interesting is how the requests are made to the API. When we look at a typical REST end-point which is accessed over HTTP, we first have a HTTP verb such as GET, POST, PUT or DELETE which indicates how the underlying resource should be manipulated. In addition to this, we have an end-point which we communicate with via a URL. Lastly, we add a payload which either contains the data we want to submit or additional parameters which can make the request more specific than what can be expressed by the URL itself.
 
 In the case of Accountant System, we can look at the simplest scenario which is saving a note. To do this, the client has to send the XML data seen in Figure~\ref{fig:xml_account_example} to the back-end.
 
@@ -1028,7 +1028,7 @@ In the case of Accountant System, we can look at the simplest scenario which is 
 
 This XML data has to be sent with a POST HTTP request to a specific URL with ends with \enquote{/note/create}. We can reason about what the purpose of the XML is. From the URL we can deduce where the information should be sent and what information we are sending---a note. We can from the HTTP verb POST see that we want to create a new note and in this case, the URL also contains this information since it ends with \enquote{/create}. The only thing missing to complete this action is the actual payload which is the note content, in this case \enquote{This is the actual note.}.
 
-When working with this API, the XML is entirely redundant from the clients point of view and it does not add any value, but for historical reasons the back-end API can not change. This puts additional strain and a new layer of complexity in every new client which interacts with the API. Not only do the client have to know about the normal interaction methods such as the URL and HTTP verbs but it also needs to maintain a collection of XML templates and use a different XML template for every request it wants to execute. It is also worth pointing out that the the actual note amounted to roughly 1/3 of the total payload data and about 2/3 was structural XML data in the example from Figure~\ref{fig:xml_account_example}.
+When working with this API, the XML is entirely redundant from the clients point of view and it does not add any value, but for historical reasons the back-end API can not change. This puts additional strain and a new layer of complexity in every new client which interacts with the API. Not only do the client have to know about the normal interaction methods such as the URL and HTTP verbs but it also needs to maintain a collection of XML templates and use a different XML template for each type of request it wants to execute. It is also worth pointing out that the the actual note amounted to roughly 1/3 of the total payload data and about 2/3 was structural XML data in the example from Figure~\ref{fig:xml_account_example}.
 
 \begin{figure}[H]
   \centering
@@ -1038,7 +1038,7 @@ When working with this API, the XML is entirely redundant from the clients point
   \caption{Each client has to maintain its own collection of XML templates in order to make requests to the API.}
 \end{figure}
 
-To avoid having to maintain a collection of XML templates in each client, we can introduce an API gateway to do that instead. By introducing an API gateway, we can expose similar end-points which work without any XML in the client. The API gateway will maintain the only collection of XML templates which it uses for translating the clients API-requests to back-end API requests. This makes the development of clients a lot easier from the API-call point of view but also has the benefit that there is only one, easily maintainable, collection of XML templates.
+To avoid having to maintain a collection of XML templates in each client, we can introduce an API gateway to do that instead. By introducing an API gateway, we can expose corresponding new end-points which can be used without any XML in the client. The API gateway will maintain the only collection of XML templates which it uses for translating the client's API-requests to back-end API requests. This makes the development of clients a lot easier from the API-call point of view but also has the benefit that there is only one, easily maintainable, collection of XML templates.
 
 \begin{figure}[H]
   \centering
@@ -1050,13 +1050,15 @@ To avoid having to maintain a collection of XML templates in each client, we can
 
 \subsection{Evaluation}
 
-In the case of Accountant Software, we can see a decrease in used bandwidth when dropping the XML format in the client since XML is a verbose format. A study in 2011 compared the XML-based protocol SOAP\footnote{Simple Object Access protocol, see appendix.} with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw an entirly fair parallel with that study to this case study.
+In the case of Accountant Software, we can see a decrease in used bandwidth when dropping the XML format in the client since XML is a verbose, an in this case unnecessary, format. It is worth pointing out that the XML templates were not only transmitted upon each request but the entire collection of XML templates also had to be downloaded to the browser every time the single-page application was initially loaded. 
 
-The biggest gain with utilising an API gateway in this scenario is likely to be found in developer productivity and code stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated back in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here is not entirely fair either since SOAP is a protocol, not just using XML, while REST is an architectural style which can utilise XML---and that is the case for Accountant Software.
+A study in 2011 compared the XML-based protocol SOAP\footnote{Simple Object Access protocol, see appendix.} with FIX (Financial Information Exchange) and CDR (Common Data Representation) in financial messaging systems and concluded that SOAP had 2--4 times larger messages on average\cite{soap_fix}. It is however hard to draw a fair parallel with that study to this case study.
 
-What we can do is to look at the limitations in XML for Accountant Software in particular. The first thing to note is that all modern browsers has built in support for parsing JSON and there is a natural 1:1 relationship between JavaScript objects encapsulating data and the JSON format. For Accountant Software to work with XML, a third-party library had to be introduced and all API-responses has to be validated to make sure that the JSON-to-XML parsing works in a decent manner as there are pitfalls to watch out for. For clients written in JavaScript, it would be a more natural approach to use an JSON-based API. 
+The biggest gain in utilising an API gateway in this scenario is likely to be found in developer productivity and code stability. The JSON versus XML is an ongoing debate which has been active for several years. Jeff Barr who is the Chief Evangelist for Amazon Web Services stated back in 2003 that 85\% of their API users utilised REST while only 15\% wanted the XML-based SOAP interface\cite{soap_amazon}. The comparison here is not entirely fair either since SOAP is a protocol, not just using XML, while REST is an architectural style which can utilise XML---and that is the case for Accountant Software.
 
-An API gateway can, like the client already does, automatically translate the XML-based responses from the API to JSON. The benefit of placing the translation step in the API gateway is that all clients will have translated XML to JSON in exactly the same way instead of relying different on local translation libraries.
+What we can do is to look at the limitations in XML for Accountant Software in particular. The first thing to note is that all modern browsers has built in support for a standardised way of parsing JSON and that there is a natural 1:1 relationship between JavaScript objects encapsulating data and the JSON format. For Accountant Software to work with XML, a third-party library was introduced and all API-responses has to be validated to make sure that the JSON-to-XML parsing works in a decent manner as there are pitfalls to watch out for. For clients written in JavaScript, it would be a more natural approach to use an JSON-based API.
+
+An API gateway can, like the client already does, automatically translate the XML-based responses from the API to JSON. The benefit of placing the translation step in the API gateway is that all clients will have translation done in exactly the same way instead of relying on different local translation libraries.
 
 \begin{figure}[H]
   \centering
@@ -1073,7 +1075,7 @@ As seen in the case studies, the API gateway concept is not a silver bullet and 
 
 HTTP requests are still very expensive in HTTP/1.1 because of the substantial overhead of headers and cookies. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the need to change will not only be demanding for the browser- and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by SSL (HTTPS)\cite{http2_ssl}. This further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
 
-We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the clients' needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients---by placing the API gateways close to the back-ends, the network costs are negligible. 
+We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the client's needs. There are many scenarios when the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients---by placing the API gateways close to the back-ends, the network costs are negligible. 
 
 The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients can handle best, the API gateway can make the client development easier and less error prone while also boasting developer productivity.
 
