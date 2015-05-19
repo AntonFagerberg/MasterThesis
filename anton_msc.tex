@@ -365,6 +365,8 @@ The focus in this thesis is to see how the clients can be optimised in terms of 
   \caption{The API gateway is placed as a new separate layer between a client and a back-end API.}
 \end{figure}
 
+One might suspect that the amount of code will increase as we introduce yet another software component. However, in many scenarios, the code we write in the API gateway had to be written in the client if the API gateway did not exist. With this reasoning, we can use, to some extent, the same amount of code but gain a lot from just placing it closer to the back-end APIs.
+
 \section{Differing client needs}
 We now, perhaps more than ever, have a vast variety of consumer devices such as mobile phones, tablets, desktop computers and other smart devices such as TVs---all of which often utilise the same APIs. One can imagine an API which returns a collection of the latest uploaded images to some service. 
 
