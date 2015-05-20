@@ -766,6 +766,7 @@ get "/instagram" do
 end
 \end{lstlisting}
   \caption{A complete example end-point created with Rackla.}
+  \label{fig:complete_end_point}
 \end{figure}
 
 \begin{itemize}
@@ -817,6 +818,28 @@ When we visit our new endpoint \lstinline{/instagram}, we will see a valid HTML 
 It is worth pointing out that even though we are requesting several images, there is only one request and one response sent between the client and the API gateway---even though there are several requests and responses sent between the API gateway and the back-end API.
 
 To conclude, we should point out that we would, most likely, in a real world application only send the image data as Base64 encoded chunks and apply the HTML markup inside of the client's code instead---by doing so we would not have to mix in any HTML markup in our API gateway. If we, in the API gateway, would attach the ordering when we send each chunks, the client could also render each received image in the appropriate position in a grid even though the images arrive out of order.
+
+\subsection{Asynchronous process overview}
+To fully understand how the asynchronous behaviour is defined \enquote{under the hood} is out of scope for this thesis. However, we can look at a rough sketch over how the Elixir processes communicate asynchronously, as defined by the \lstinline{Rackla} type. We will use the example seen in Figure~\ref{fig:complete_end_point}---more specifically, the largest pipeline defined on line 6--35.
+
+\begin{figure}[H]
+  \centering
+    \begin{center}
+      \includegraphics[width=0.9\textwidth]{images/process_overview.png}
+    \end{center}
+  \caption{Sketched overview of how the processes communicate in the middle pipeline defined in Figure~\ref{fig:complete_end_point}, line 6--35.}
+  \label{fig:process}
+\end{figure}
+
+When we call the first \lstinline{request} function on line 7, it will spawn a new process which will execute the HTTP request to the defined URL. We then we call \lstinline{flat_map} on line 8 and it will spawn a matching new process which will send a message to the process defined in \lstinline{request} telling it that it is ready to receive data as soon as it is ready (as soon as the HTTP request is done). When the HTTP request is done, the process in \lstinline{request} will send the results to the process defined in \lstinline{flat_map}.
+
+A new pipeline is created inside the \lstinline{flat_map} function's process---spawning a process inside another process means that the internally defined processes has access to the outer process's data via the scope. 
+
+On line 22, we call \lstinline{request} with a list of URLs. The internal \lstinline{request} function will spawn a new process for each URL so that each HTTP request will be executed by a unique process. When we call \lstinline{map} on line 23, it knows how many processes that have been spawned inside \lstinline{request}, and thus, it will spawn the same amount of new processes to receive the data and transform it.
+
+The \lstinline{response} function defined in the outer pipeline will spawn just one new process even though it will communicate with an arbitrary amount of processes. This is because its job is to create one HTTP response by consolidating the responses from all processes.
+
+It is important to understand that the arrows drawn in Figure~\ref{fig:process} are independent of each other and that they are not ordered in any way. We can think of the arrows as open roads where the messages race like cars to the finish line---the processes spawned by the \lstinline{request} function defined inside \lstinline{flat_map} are independent of each other, the first responding HTTP request has the opportunity to be sent first to the client.
 
 \section{Related works}
 \subsubsection{Tyk}
@@ -1075,9 +1098,9 @@ When looking at the requests the client sends to the back-end API, we earlier co
 \chapter{Conclusions}
 As seen in the case studies, the API gateway concept is not a silver bullet and the need for an API gateway varies on a number of factors such as which technology is used in the client and the back-end servers, and how well the API can be adapted to the clients' needs. We have also seen that API gateways can be used for many different purposes---from network performance improvements to reducing code complexity and increasing developer productivity.
 
-Requests are still \enquote{expensive} in HTTP/1.1 because of the substantial amount of overhead from headers and cookies and the TCP connection limit. Browsers limits the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the change will not only be demanding for the browser and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected by SSL (HTTPS)\cite{http2_ssl}. This will likely slow down the HTTP/2 adoption which further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
+Requests are still \enquote{expensive} in HTTP/1.1 because of the substantial amount of overhead from headers and cookies, and the TCP connection limit. Browsers are limiting the TCP connection pool to six connections which degrades the performance, especially when the network connection is suffering from a high latency. HTTP/2 will solve many of these issues but a complete switch to HTTP/2 will take many years---the change will not only be demanding for the browser and server developers but all intermediate devices such as proxies has to be upgraded as well. The HTTPbis working group has also announced that HTTP/2 will only work with URLs protected with SSL (HTTPS)\cite{http2_ssl}. This will likely slow down the HTTP/2 adoption rate which further highlights the need for an optimising API gateway for many years to come. Simple techniques such as request concatenation and data transformations can dramatically increase the performance when looking at the communications between the clients and back-end servers.
 
-We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the clients' needs. There are many scenarios where the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients by letting it do all the work and placing it close to the back-end where the network costs are negligible. 
+We have in the case studies seen that API gateways can be very useful when working with legacy back-end APIs that does not conform to the clients' needs. There are many scenarios where the back-ends themselves can not be changed such as when old clients has to be supported or the back-end itself is not actively developed. In such scenarios, API gateways can move the burden away from the clients by placing it close to the back-end, where the network costs are negligible, and letting it do all the work. 
 
 The API gateway is not only useful for optimising performance but can also increase developer productivity. By transforming the responses to the format which the clients can handle the best, the API gateway can make the client development process easier and less error prone while also boosting developer productivity.
 
