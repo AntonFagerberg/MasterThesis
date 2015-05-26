@@ -749,7 +749,7 @@ get "/instagram" do
             |> map(fn(img_response) ->
               case img_response do
                 {:error, reason} ->
-                  just(reason)
+                  reason
                   
                 img_data ->
                   "<img src=\"data:image/jpeg;base64,#{Base.encode64(img_data)}\" height=\"150px\" width=\"150px\">"
