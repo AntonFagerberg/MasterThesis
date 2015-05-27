@@ -128,7 +128,7 @@ Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, c
 
 It is common in modern web applications to send a lot of HTTP requests, consisting of headers and a payload, toward one or many back-end APIs. The payload of these requests can be very small, such as a PUT request with the intention of updating a single field or even a GET request to retrieve a user profile. It is very noticeable, when the payload is small, just how much data has to be transferred along with it in order to perform a HTTP request.
 
-There are typically plenty of headers transferred with every HTTP request and these headers can end up being a substantial amount of the total data of every request. The data stored in the headers may end up being the performance bottle neck in many HTTP requests\cite{rfc6202}---especially if a lot of small requests has to be transmitted on a frequent basis.
+There are typically plenty of headers transferred with every HTTP request and these headers can end up being a substantial amount of the total data in every request. The data stored in the headers may end up being the performance bottle neck in many HTTP requests\cite{rfc6202}---especially if a lot of small requests has to be transmitted on a frequent basis.
 
 As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response from the API is encoded in JSON\footnote{JavaScript Object Notation, see appendix.} format. 
 
@@ -240,7 +240,7 @@ curl --trace-ascii - 'https://api.instagram.com/v1/users/1574083/?access_token=[
   \label{fig:headers_overhead}
 \end{figure}
 
-We can from the output in Figure~\ref{fig:headers_overhead} see that 705 bytes are sent as request header data (line 1), 536 bytes are received as response header data (line 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 39, 41 and 43) and the actual response payload is 271 bytes (line 45). This means that 82\% of the data in every request sent to the Instagram API end-point are nothing but header data.
+We can from the output in Figure~\ref{fig:headers_overhead} see that 705 bytes are sent as request header data (line 1), 536 bytes are received as response header data (line 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 39, 41 and 43) and the actual response payload is 271 bytes (line 45). This means that 82\% of the data, in every request, sent to this Instagram API end-point is nothing but header data.
 
 The header data is often useful and in many cases required so we can not just discard it. Consider instead if we could expose a new end-point where all ten users could be requested simultaneously with one HTTP request instead of one request per user. In that case, we would get away with only transmitting the header data once and not ten times.
 
@@ -249,12 +249,12 @@ The header data is often useful and in many cases required so we can not just di
     \begin{center}
       \begin{tabular}{ r | c | c }
         \textbf{\#} & \textbf{10 users, 10 request} & \textbf{10 users, 1 request} \\ \hline
-        Total headers & 12,410 B & 1,241 B \\ \hline
-        Total payload & 2,710 B & 2,710 B \\ \hline
+        Total bytes headers & 12,410 & 1,241 \\ \hline
+        Total bytes payload & 2,710 & 2,710 \\ \hline
         \% headers of total data & 82\% & 31\% \\ \hline
       \end{tabular}
     \end{center}
-  \caption{The headers-payload ratio when fetching ten user in one request compared to one request per user. The overhead percentage will continue to decrease linearly in relation to the number of users requested simultaneously.}
+  \caption{The headers-payload ratio when executing one request per user compared to ten users in one request. The overhead percentage will continue to decrease linearly in relation to the number of users requested simultaneously.}
 \end{figure}
 
 The header data used in this example can be viewed as a lower bound. A large quantity of HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the header data and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
