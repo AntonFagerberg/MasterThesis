@@ -13,6 +13,7 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage{csquotes}
+%\usepackage{capt-of}
 
 \usepackage[hyphens]{url}
 \usepackage{hyperref}
@@ -125,17 +126,15 @@ Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, c
 \section{Headers}
 \label{headers}
 
-It is common in modern web applications to send a lot of HTTP requests, consisting of headers and a payload, toward one or many back-end APIs. The payload of these requests can be very small, such as a PUT request with the intention of updating a single field. It is very noticeable when the payload is small just how much data has to be transfered along with it in order to perform a HTTP request.
+It is common in modern web applications to send a lot of HTTP requests, consisting of headers and a payload, toward one or many back-end APIs. The payload of these requests can be very small, such as a PUT request with the intention of updating a single field or even a GET request to retrieve a user profile. It is very noticeable, when the payload is small, just how much data has to be transferred along with it in order to perform a HTTP request.
 
 There are typically plenty of headers transferred with every HTTP request and these headers can end up being a substantial amount of the total data of every request. The data stored in the headers may end up being the performance bottle neck in many HTTP requests\cite{rfc6202}---especially if a lot of small requests has to be transmitted on a frequent basis.
 
 As an example, consider the Instagram API\cite{instagram_api} which has an end-point where you can get information about a certain user account. The response from the API is encoded in JSON\footnote{JavaScript Object Notation, see appendix.} format. 
 
-Suppose a client was built with the intention to show details about, for example, your ten most followed friends. We can benchmark how making ten separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all ten users with one request---the difference being that the headers are sent only once versus ten times.
-
 \begin{figure}[H]
   \centering
-    \begin{lstlisting}
+\begin{lstlisting}
 {
     "data": {
         "id": "1574083",
@@ -151,105 +150,116 @@ Suppose a client was built with the intention to show details about, for example
         }
     }
 }
-    \end{lstlisting}
-  \caption{User data response from the Instagram API encoded in JSON format.}
-\end{figure}
-
-The HTTP requests can be benchmarked with the command-line tool cURL\cite{curl}. To make the requests look like they were made from an actual browser, we tell cURL to use the default headers provided by the browser Mozilla Firefox. These headers include among other things the browser's User-Agent, media types which are acceptable responses and so on. A server running on localhost port 9000 is used in this example to simulate the the Instagram API.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true]
-curl --trace-ascii - 'http://localhost:9000/user/snoopdogg' -H 'Host: localhost:9000' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.0) Gecko/20100101 Firefox/36.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'
 \end{lstlisting}
-  \caption{The cURL command used in the benchmark.}
+  \caption{The user profile response from the Instagram API, encoded in JSON format.}
+  \label{fig:user_json}
 \end{figure}
 
-Executing this request with cURL will give us the following result:
+\clearpage
+
+Suppose a client was built with the intention of showing details about ten users. We can benchmark how making ten separate API requests would differ, in transmitted HTTP data size, from how it would behave if we could fetch all ten users with one request---the difference being that the headers are sent only once in comparison with ten times.
+
+The HTTP requests can be benchmarked with the command-line tool cURL\cite{curl}. In this example, we let the browser Firefox generate the cURL command in order to make the request look like it was sent from a regular browser. This includes setting headers such as the accepted media types, the user agent, cookies and so on.
+
 
 \begin{figure}[H]
   \centering
 \begin{lstlisting}[breaklines=true]
-=> Send header, 355 bytes (0x163)
-0000: GET /user/snoopdogg HTTP/1.1
-001e: Accept-Encoding: deflate, gzip
-003e: Host: localhost:9000
-0054: User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.
-0094: 0) Gecko/20100101 Firefox/36.0
-00b4: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/
-00f4: *;q=0.8
-00fd: Accept-Language: en-US,en;q=0.5
-011e: Connection: keep-alive
-0136: Pragma: no-cache
-0148: Cache-Control: no-cache
-0161:
+curl --trace-ascii - 'https://api.instagram.com/v1/users/1574083/?access_token=[...]' 
+	-H 'Host: api.instagram.com' 
+	-H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:40.0) Gecko/20100101 Firefox/40.0' 
+	-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' 
+	-H 'Accept-Language: en-US,en;q=0.5' 
+	--compressed 
+	-H 'DNT: 1' 
+	-H 'Cookie: [...]' 
+	-H 'Connection: keep-alive' 
+	-H 'Pragma: no-cache' 
+	-H 'Cache-Control: no-cache'
+\end{lstlisting}
+  \caption{The cURL command used in the benchmark---the access token and cookies have been omitted.}
+\end{figure}
+
+\clearpage
+
+\begin{figure}[H]
+  \centering
+\begin{lstlisting}[breaklines=true]
+=> Send header, 705 bytes (0x2c1)
+0000: GET /v1/users/1574083/?access_token=[...]
+0040: [...] HTTP/1.1
+0060: Accept-Encoding: deflate, gzip
+0080: Host: api.instagram.com
+0099: User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:40.
+00d9: 0) Gecko/20100101 Firefox/40.0
+00f9: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/
+0139: *;q=0.8
+0142: Accept-Language: en-US,en;q=0.5
+0163: DNT: 1
+016b: Cookie: [...]
+02bf:
 <= Recv header, 17 bytes (0x11)
 0000: HTTP/1.1 200 OK
+<= Recv header, 29 bytes (0x1d)
+0000: X-Ratelimit-Remaining: 4996
+<= Recv header, 22 bytes (0x16)
+0000: Content-Language: en
+<= Recv header, 24 bytes (0x18)
+0000: Content-Encoding: gzip
+<= Recv header, 40 bytes (0x28)
+0000: Expires: Sat, 01 Jan 2000 00:00:00 GMT
+<= Recv header, 48 bytes (0x30)
+0000: Vary: Cookie, Accept-Language, Accept-Encoding
+<= Recv header, 25 bytes (0x19)
+0000: X-Ratelimit-Limit: 5000
+<= Recv header, 18 bytes (0x12)
+0000: Pragma: no-cache
+<= Recv header, 61 bytes (0x3d)
+0000: Cache-Control: private, no-cache, no-store, must-revalidate
+<= Recv header, 37 bytes (0x25)
+0000: Date: Wed, 27 May 2015 10:28:24 GMT
 <= Recv header, 47 bytes (0x2f)
 0000: Content-Type: application/json; charset=utf-8
+<= Recv header, 121 bytes (0x79)
+0000: Set-Cookie: [...]
+0040: [...]
+<= Recv header, 24 bytes (0x18)
+0000: Connection: keep-alive
 <= Recv header, 21 bytes (0x15)
-0000: Content-Length: 286
+0000: Content-Length: 271
 <= Recv header, 2 bytes (0x2)
 0000:
-<= Recv data, 286 bytes (0x11e)
+<= Recv data, 271 bytes (0x10f)
+0000: ....H.eU..m.Mo. ..............7....V.E .........z........Zd..}..
+0040: ..."..3...E/W.....k.....hP..............&.....!...../|.q...]v.~~
+0080: .C\.u..*-{.F.?3.7..Q...6X........f...g....|q..,T8-(.....cLkV..55
+00c0: %....<.=..H,/...7w..F....6........qd....v....QK.c....tLh..S....
+0100: !9-....,...a...
 \end{lstlisting}
-  \caption{The resulting output from cURL when sending an HTTP request to fetch one user. The actual response payload has been omitted.}
+  \caption{Result from cURL. Cookies and access token omitted.}
   \label{fig:headers_overhead}
 \end{figure}
 
-We can from the output in Figure~\ref{fig:headers_overhead} see that 355 bytes are sent as request header data (line 1), 87 bytes are received as response header data (line 14, 16, 18 and 20) and the actual response payload is 286 bytes (line 22). This means that 61\% of the data of every request sent to the Instagram API end-point are nothing but header data.
+We can from the output in Figure~\ref{fig:headers_overhead} see that 705 bytes are sent as request header data (line 1), 536 bytes are received as response header data (line 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 39, 41 and 43) and the actual response payload is 271 bytes (line 45). This means that 82\% of the data in every request sent to the Instagram API end-point are nothing but header data.
 
-The header data is often useful and in many cases required so we can not just discard it. Consider instead if we would expose a new end-point where all ten users could be requested simultaneously with one HTTP request instead of ten---and that the end-point could return an array of JSON objects instead of a single one. In that case, we would get away with only transmitting the header data once and not ten times.
-
-\begin{figure}[H]
-  \centering
-\begin{lstlisting}[breaklines=true]
-=> Send header, 446 bytes (0x1be)
-0000: GET /users/snoopdog1,snoopdog2,snoopdog3,snoopdog4,snoopdog5,sno
-0040: opdog6,snoopdog7,snoopdog8,snoopdog9,snoopdo10 HTTP/1.1
-0079: Accept-Encoding: deflate, gzip
-0099: Host: localhost:9000
-00af: User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:36.
-00ef: 0) Gecko/20100101 Firefox/36.0
-010f: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/
-014f: *;q=0.8
-0158: Accept-Language: en-US,en;q=0.5
-0179: Connection: keep-alive
-0191: Pragma: no-cache
-01a3: Cache-Control: no-cache
-01bc:
-<= Recv header, 17 bytes (0x11)
-0000: HTTP/1.1 200 OK
-<= Recv header, 47 bytes (0x2f)
-0000: Content-Type: application/json; charset=utf-8
-<= Recv header, 22 bytes (0x16)
-0000: Content-Length: 2871
-<= Recv header, 2 bytes (0x2)
-0000:
-<= Recv data, 2871 bytes (0xb37)
-\end{lstlisting}
-  \caption{Results from cURL when performing one HTTP request to fetch ten users. The actual response payload has been omitted.}
-  \label{fig:headers_overhead2}
-\end{figure}
-
-From the results in Figure~\ref{fig:headers_overhead2}, we can see that the size of the request headers has been increased from 355 to 446 bytes (line 1) because of the longer URL which specifies all users to fetch. The response headers has increased with just one byte from 87 to 88 (line 15, 17, 19 and 21) because of the increased field \enquote{Content-Length}. This results in a combined header size of 534 bytes. The response payload has increased from 286 bytes to 2871 bytes (line 23)---roughly tenfold which is expected since we request ten users at once instead of one per request. A minor increase in data is added because of the new array syntax in the JSON format response.
-
-The overhead added as the result of the header data have now been reduced from 61\% to 16\% of the total transmitted data, simply by concatenating ten separate requests into one. This number will continue to scale according to the number of requests concatenated---the more requests concatenated, the less amount of overhead from HTTP headers.
+The header data is often useful and in many cases required so we can not just discard it. Consider instead if we could expose a new end-point where all ten users could be requested simultaneously with one HTTP request instead of one request per user. In that case, we would get away with only transmitting the header data once and not ten times.
 
 \begin{figure}[H]
   \centering
     \begin{center}
       \begin{tabular}{ r | c | c }
         \textbf{\#} & \textbf{10 users, 10 request} & \textbf{10 users, 1 request} \\ \hline
-        Total headers & 4,420 B & 534 B \\ \hline
-        Total payload & 2,860 B & 2,871 B \\ \hline
-        \% headers of total data & 61\% & 16\% \\ \hline
+        Total headers & 12,410 B & 1,241 B \\ \hline
+        Total payload & 2,710 B & 2,710 B \\ \hline
+        \% headers of total data & 82\% & 31\% \\ \hline
       \end{tabular}
     \end{center}
-  \caption{The headers-payload ratio when fetching ten user in one request compared to ten requests.}
+  \caption{The headers-payload ratio when fetching ten user in one request compared to one request per user. The overhead percentage will continue to decrease linearly in relation to the number of users requested simultaneously.}
 \end{figure}
 
-The header data used in this example should be viewed as a lower bound. In practise, HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the header data and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
+The header data used in this example can be viewed as a lower bound. A large quantity of HTTP cookies, which are used for personalisation, analytics and session management, are also sent with every HTTP request as part of the header data and can add up to multiple kilobytes of protocol overhead for every single HTTP request\cite[page 200]{HPBN}.
+
+Another interesting thing in Figure~\ref{fig:headers_overhead} happens on line 46--50 which is where the payload is. While it looks like gibberish, it is actually the user profile data in JSON format seen in Figure~\ref{fig:user_json} but compressed using Gzip (more about compression on page~\pageref{compression}). Compressing responses is a great bandwidth saving technique---however, only the payload can be compressed in HTTP/1.1, not the headers.
 
 This is one of the issues that can be mitigated by using HTTP/2 since it allows the header fields to be encoded with a static Huffman code which reduces the transfer size. HTTP/2 also require that the client and the server remember the previously seen header fields so that they can be used as a reference when encoding previously sent values\cite[page 19]{hpbn2}.
 
@@ -431,6 +441,7 @@ API gateways can be utilised to transform a \enquote{Pure REST API} with HATEOAS
 \end{figure}
 
 \section{Compression}
+\label{compression}
 API gateways can be utilised to compress responses in the cases where no compression is present on the back-end API servers. This can significantly reduce the amount of traffic the client has to receive which increases the performance, especially on mobile devices with low bandwidth. HTTP compression was explored on page \pageref{compression} where it was noted that Gzip has an expected compression level of 60-80\% on text-based media.
 
 \begin{figure}[H]
