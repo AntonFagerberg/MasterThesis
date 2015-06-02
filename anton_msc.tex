@@ -395,7 +395,7 @@ A client often want to perform many requests simultaneously, either to one or mu
   \caption{The API gateway receives a concatenated request which it distributes to multiple resources, the responses are then concatenated into a single response. The resources can either belong to one or several back-end systems.}
 \end{figure}
 
-When working with HTTP requests, there are multiple penalties for executing many requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from HTTP headers (page \pageref{headers})---but there are also other issues such as the increased battery drain on mobile devices which occur when the wireless radio needs to become active many times if requests are not concatenated\cite{battery}.
+When working with HTTP requests, there are multiple penalties for executing many requests compared to one concatenated request. These penalties includes the previously mentioned limit of maximum TCP connections (page \pageref{max_tcp}) and the overhead from HTTP headers (page \pageref{headers})---but there are also other issues such as the increased battery drain on mobile devices which occur when the wireless radio needs to become active multiple times\cite{battery}.
 
 We can, by utilising an API gateway to concatenate many HTTP requests, avoid these common problems. Concatenating requests can be seen directly in many modern API designs such as the Facebook Graph API\cite{facebook_batch_requests}---but for the APIs which lacks this feature, an API gateway can effectively mitigate these problems.
 
