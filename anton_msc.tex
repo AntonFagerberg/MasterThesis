@@ -868,7 +868,7 @@ It is important to understand that the arrows drawn in Figure~\ref{fig:process} 
 \section{Related work}
 \subsubsection{Tyk}
 
-Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like Rackla, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful since the templates are not as expressive as a full featured programming language.
+Tyk is an open source API gateway written in Go which enables you to control who accesses your API, when they access it and how they access it. It can, like Rackla, transform requests but it uses templates instead of code. This approach can make the end-point development easier with the downside of being less powerful since the templates are not as expressive as a full featured programming language. The focus in Rackla is mainly on transforming the data between the client and back-end API while Tyk's, on the other hand, is more about adding additional functionality around existing APIs.
 
 \vspace{5mm}
 
@@ -876,7 +876,7 @@ Tyk is an open source API gateway written in Go which enables you to control who
 
 \subsubsection{LoopBack-Gateway}
 
-LoopBack-Gateway is an experimental, minimum viable product, API gateway developed by StrongLoop. It is written in JavaScript using Node.js and focuses on rate limiting (limiting the amount of calls a client can make), reverse proxying (retrieves resources and then relays them to the client) and security (forcing the client to authenticate itself before making calls to the API).
+LoopBack-Gateway is an experimental, minimum viable product, API gateway developed by StrongLoop. It is written in JavaScript using Node.js and focuses on rate limiting (limiting the amount of calls a client can make), reverse proxying (retrieves resources and then relays them to the client) and security (forcing the client to authenticate itself before making calls to the API). While LoopBack-Gateway in theory could do many of the things Rackla does, it would require the users of the framework to implement many of these features themselves while Rackla provides many helping functions from the starts already optimised for being used concurrently. LoopBack-Gateway, like Tyk, also add functionality around existing APIs such as rate limiting which is something that Rackla does not.
 
 \vspace{5mm}
 
