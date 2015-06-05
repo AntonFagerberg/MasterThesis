@@ -315,7 +315,7 @@ The HTTP server can utilise chunked transfer encoding in the HTTP responses in o
 
 This approach, with concatenated requests and chunked responses, has been successfully been implemented at Dropbox in their gallery software implementation \cite{dropbox_chunked}---much in the same fashion as the previous example.
 
-Chunked transfer encoding is the only encoding which HTTP/1.1 clients are required to understand \cite{chunked_required}. This makes it very attractive to use---especially in the use cases where data chunks can be separated in to logical pieces.
+Chunked transfer encoding is the only encoding which HTTP/1.1 clients are required to understand \cite{rfc2616}. This makes it very attractive to use---especially in the use cases where data chunks can be separated in to logical pieces.
 
 \section{Compression}
 \label{compression_more}
@@ -330,7 +330,7 @@ As an example, arbitrary user data\footnote{\url{https://gist.github.com/AntonFa
 \mbox{Space Saving} = 1 - \frac{\mbox{Compressed size}}{\mbox{Uncompressed size}} = 1 - \frac{16,563}{55,205} \approx 70\%
 \end{equation}
 
-An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1 \cite{header_compression}. This means that the headers, including cookies, are not compressed which would have otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2 \cite[page 19]{hpbn2}.
+An important thing to note about Gzip compression is that only the payload is compressed in HTTP/1.1 \cite{rfc2616}. This means that the headers, including cookies, are not compressed which would have otherwise been an additional performance gain. This is one of the improvements which have been addressed in the development of HTTP/2 \cite[page 19]{hpbn2}.
 
 \section{Further reading}
 \subsubsection{High Performance Browser Networking - What every web developer should know about networking and web performance, Ilya Grigorik, 2013, O'Reilly Media}
@@ -1128,7 +1128,7 @@ In the case study regarding \enquote{Bank App}, we saw that API gateways are not
 
 But we also noticed that API gateways are not always useful, as seen in the \enquote{Accountant System} case study. The two main factors that we should look for is how well the API conforms to the client's needs as well as the potential limitations introduced by HTTP/1.1---especially the maximum TCP connections and the headers overhead established in the first chapter.
 
-HTTP/2 addresses the performance issues discussed in regards to HTTP/1.1 with header compression \cite{header_compression} and a multiplexing connection which removes the fixed TCP connection limit \cite{hpbn2}. Despite this, HTTP/2 will not solve all problems such as the amount of duplicate and unnecessary data sent from many API requests. It will not solve the problems with code duplication encountered in the clients nor the complexity they must be able to handle in order to work with API responses that are not suited for their specific needs.
+HTTP/2 addresses the performance issues discussed in regards to HTTP/1.1 with header compression \cite{hpbn2} and a multiplexing connection which removes the fixed TCP connection limit \cite{hpbn2}. Despite this, HTTP/2 will not solve all problems such as the amount of duplicate and unnecessary data sent from many API requests. It will not solve the problems with code duplication encountered in the clients nor the complexity they must be able to handle in order to work with API responses that are not suited for their specific needs.
 
 It should also be pointed out that migrating all clients, servers and middle boxes from HTTP/1.1 to HTTP/2 will take at least another decade \cite{hpbn2}. This makes the performance enhancing techniques used in gateways with HTTP/1.1 relevant for at least another decade to come and perhaps even longer for legacy systems used in the industry.
 
