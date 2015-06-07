@@ -119,7 +119,7 @@ Thirdly, an API gateway framework was created to in order to better understand t
 Finally, we did case studies on three real-world production systems. Each case study consist of an analysis to determine whether the system in question had any issues which could be improved with the introduction of an API gateway. A solution was created for a selected part of each system with the framework described in the previous chapter. This was done in order to verify that not only could the framework be used in real-world scenarios, but also to provide a method for benchmarking the results before and after the introduction of the API gateway. By doing so, we can determine in which scenarios it is practical to implement an API gateway, how it can be done from a practical point of view and what the expected results will be.
 
 \chapter{Performance issues with HTTP/1.1}
-Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems \cite{rfc2616}. The first standardised version of HTTP/1.1 was released in January 1997 \cite{rfc2068}. The subsequent version, HTTP/2 (originally named HTTP/2.0), was approved for publication as a proposed standard on Feb 17, 2015 by the Internet Engineering Steering Group (IESG) and the HTTP/2 specification was published in May 2015 \cite{rfc_7540}. Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take at least a decade \cite[page 21]{hpbn2} before HTTP/2 fully replaces HTTP/1.1 as the default protocol used on all client, web servers and middle-boxes such as proxies and firewalls---and even longer for many legacy back-end systems and clients used in the slow-moving corporate environment. It is therefore necessary to acknowledge and mitigate the performance issues related to HTTP/1.1 even many years after the release of HTTP/2.
+Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, hypermedia information systems \cite{rfc2616}. The first standardised version of HTTP/1.1 was released in January 1997 \cite{rfc2616}. The subsequent version, HTTP/2 (originally named HTTP/2.0), was approved for publication as a proposed standard on Feb 17, 2015 by the Internet Engineering Steering Group (IESG) and the HTTP/2 specification was published in May 2015 \cite{rfc_7540}. Although HTTP/2 addresses several of the HTTP/1.1 performance issues, it is reasonable to assume that it will take at least a decade \cite[page 21]{hpbn2} before HTTP/2 fully replaces HTTP/1.1 as the default protocol used on all client, web servers and middle-boxes such as proxies and firewalls---and even longer for many legacy back-end systems and clients used in the slow-moving corporate environment. It is therefore necessary to acknowledge and mitigate the performance issues related to HTTP/1.1 even many years after the release of HTTP/2.
 
 \section{Headers}
 \label{headers}
@@ -265,7 +265,7 @@ This is one of the issues that can be mitigated by using HTTP/2 since it allows 
 \label{max_tcp}
 The HTTP/1.1 protocol does not allow data to be multiplexed over the same connection \cite[p.194]{HPBN}. For this reason, most browser vendors have introduced a connection pool of six TCP connections per host (the HTTP/1.1 specification limits the pool to two connections \cite{rfc2616} per host, but modern browsers have refused to conform to this standard in order to decrease the load times). The limitation caused by the fixed number of connections in the connection pool is known as the \enquote{maximum TCP connections}.
 
-A common way to deal with the connection limit is to use domain sharding \cite{yahoo-performance-4}	. Since the limit of six TCP connections is on a host name basis, it is possible to create multiple subdomains to get around this limitation. If the subdomains \lstinline{<shard1, shard2, ...>.example.com} are created and they all point to the same server, then more than six TCP connections can be used in parallel at the same time to the same server from a browser.
+A common way to deal with the connection limit is to use domain sharding \cite[page 161]{sharding}	. Since the limit of six TCP connections is on a host name basis, it is possible to create multiple subdomains to get around this limitation. If the subdomains \lstinline{<shard1, shard2, ...>.example.com} are created and they all point to the same server, then more than six TCP connections can be used in parallel at the same time to the same server from a browser.
 
 This approach is unfortunately not without its downsides as every new hostname requires a new DNS lookup and each new TCP stream requires a TCP three-way handshake and a TCP slow start, all of which can have a negative impact on the load times \cite[page 199]{HPBN}---just the DNS lookup typically takes 20--120 ms \cite[page 63]{HPWS}. Another problem with domain sharding is the fact that the browser always establishes six connections per shard even if not all, or even any of them are used. In addition to these problems, domain sharding is a complicated manual process to set-up and it is hard to determine how many shards to use for achieving optimal performance. Yahoo investigated this problem and they concluded that you should, as a rule of thumb, use at least two, but no more than four domain shards \cite{yahoo-performance-4}.
 
@@ -298,7 +298,7 @@ If we instead could concatenate these 60 thumbnail requests into a single reques
 
 Other similar approaches to the same problem include CSS Sprites \cite{css_sprites} where a predefined set of images, such as icons, are merged in to one large image file. Individual images are then displayed by rendering parts of the larger image across the website. Note that this approach only works on a predefined set of images since the image merging process is costly and it would therefore not work in the thumbnail example above.
 
-Text-based files such as JavaScript source code files and CSS stylesheets can also be concatenated into larger files during the build process in order to decrease the amount of HTTP requests needed \cite{js_concat}.
+Text-based files such as JavaScript source code files and CSS stylesheets can also be concatenated into larger files during the build process in order to decrease the amount of HTTP requests needed \cite{css_sprites}.
 
 As a side-note, it is worth pointing out that increasing the bandwidth of the connection would not resolve this problem as the latency is the only bottleneck in this example. We often focus on increasing the bandwidth as our connections to the internet improve when we perhaps should focus more on the latency instead.
 
@@ -380,7 +380,7 @@ We now, perhaps more than ever, have a vast variety of consumer devices such as 
 
 Since the screen size is drastically different on a mobile phone compared to a TV, the number of images the client wants to retrieve from the API can vary a lot. Depending on the type of client which is requesting the data, the API gateway can adapt the number of returned images.
 
-A similar approach has been implemented at Netflix where each client development team write their own \enquote{adaptor} code to fully optimise the underlying API for their client's specific needs \cite{netflix}. This concept is very similar to how an API gateway work.
+A similar approach has been implemented at Netflix where each client development team write their own \enquote{adapter} code to fully optimise the underlying API for their client's specific needs \cite{netflix}. This concept is very similar to how an API gateway work.
 
 \section{Multiple resources and requests}
 A client often want to perform many requests simultaneously, either to one or multiple back-end APIs. A typical scenarios is when a user loads a single-page web application for the first time and the application's initial state has to be retrieved. Another typical example is when multiple resources, which are connected in some fashion, has to be loaded.
@@ -567,6 +567,12 @@ Netflix has applied a concept, similar to API gateways, where each client's team
 \noindent Optimizing the Netflix API, Ben Christensen, 2013, The Netflix Tech Blog
 
 \noindent \url{http://techblog.netflix.com/2013/01/optimizing-netflix-api.html}
+
+\vspace{5mm}
+
+\noindent  Embracing the Differences : Inside the Netflix API Redesign
+
+\noindent \url{http://techblog.netflix.com/2012/07/embracing-differences-inside-netflix.html}
 
 \vspace{5mm}
 
@@ -1080,7 +1086,7 @@ The framework Rackla developed in this thesis used Elixir but there is no doubt 
 JSON, JavaScript Object Notation, is a data-interchange text format based on a subset of the JavaScript Programming Language. It is an open standard format which uses human-readable text. JSON is often used as an alternative to XML.
 
 \section{XML}
-XML, Extensible Markup Language, is a markup language used for encoding documents. It can be used as an alternative to JSON for data communication but it is also used in other areas and document formats.
+XML, Extensible Markup Language, is a markup language used for encoding documents. It can be used as an alternative to JSON for data communication but it is also used in other areas such as document formats.
 
 \section{REST}
 REST, Representational State Transfer, consists of guidelines and best practices for creating scalable web services. The style was developed by the W3C Technical Architecture Group (TAG) in parallel with HTTP/1.1. RESTful systems often communicate over HTTP using so called HTTP verbs such as GET, POST, PUT and DELETE to send and retrieve data between clients and servers.
@@ -1107,7 +1113,7 @@ WAN, Wide Area Network, is a network consisting of a large region such as a coun
 VPN, Virtual Private Network, is a technique used to securely extend a private network, such as the network inside a corporation, to an outside public network such as the internet.
 
 \section{URL}
-URL, Uniform Resource Locator, is a character string which identifies a certain internet resource such as a website and an API end-point.
+URL, Uniform Resource Locator, is a character string which identifies a certain internet resource such as a website or an API end-point.
 
 \chapter{JSON/XML conversion}
 
